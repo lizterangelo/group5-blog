@@ -14,8 +14,8 @@ const CATEGORIES = [
 
 export default defineConfig({
   branch: 'main',
-  clientId: 'bfaac734-45c0-469a-98be-df7da654b527', // Get this from tina.io
-  token: 'e22ed6422747f99b827b857a1a70e9970e1893ae', // Get this from tina.io
+  token:  process.env.TINA_TOKEN, // This should match the value in your .env file
+  clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID, // This should match the value in your .env file
 
   build: {
     outputFolder: 'admin',
