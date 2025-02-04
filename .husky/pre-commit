@@ -12,4 +12,4 @@ echo "PATH in pre-commit: $PATH"
 # Source Husky's script
 . "$(dirname "$0")/_/husky.sh"
 
-# Now run lint-staged via pnpm
+# Now run lint-staged via pnpm'

@@ -27,7 +27,6 @@ export default defineConfig({
         label: 'Blog Post',
         path: 'src/content/blog',
         format: 'mdx',
-        // frontmatterFormat: 'toml', // Specify TOML as the frontmatter format
         fields: [
           {
             type: 'image',
