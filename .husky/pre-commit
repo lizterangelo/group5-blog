@@ -1,8 +1,16 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+# --- (Optional) Load nvm and switch to Node 20 ---
+# Remove or comment out if you don't use nvm
+[ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
+nvm use 20
+
+# Debug: Show which Node & PATH the hook actually uses
+echo "Node used by pre-commit: $(node --version)"
+echo "PATH in pre-commit: $PATH"
+
+# Source Husky's script
 . "$(dirname "$0")/_/husky.sh"
 
-# npm
-# npx lint-staged
-
-# pnpm
+# Now run lint-staged via pnpm
 pnpm exec lint-staged
