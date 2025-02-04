@@ -1,16 +1,9 @@
-// import { CATEGORIES } from './data/categories.ts'
+import { CATEGORIES } from '@/data/categories'; // Using alias (if configured)
 import { defineConfig } from 'tinacms'
 
 // Your hosting provider likely exposes this as an environment variable
 // const branch = process.env.HEAD || process.env.VERCEL_GIT_COMMIT_REF || 'main'
 
-const CATEGORIES = [
-	'Category 1',
-	'Category 2',
-	'Category 3',
-	'Category 4',
-	'Category 5'
-]
 
 export default defineConfig({
   branch: process.env.VERCEL_GIT_COMMIT_REF,
