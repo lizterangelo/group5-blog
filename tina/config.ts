@@ -12,15 +12,10 @@ const CATEGORIES = [
 	'Category 5'
 ]
 
-const branch =
-  process.env.NEXT_PUBLIC_TINA_BRANCH ||
-  process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF ||
-  process.env.HEAD
-
 export default defineConfig({
-  branch,
-  token:  process.env.TINA_TOKEN, // This should match the value in your .env file
-  clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID, // This should match the value in your .env file
+  branch: 'main',
+  token:  "dfcca58437b27075562de4caccaf5eefc705bf32", // This should match the value in your .env file
+  clientId: "2976a1ce-fd78-44aa-af77-b2d67246d4fa", // This should match the value in your .env file
 
   build: {
     outputFolder: 'admin',
