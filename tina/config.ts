@@ -15,10 +15,10 @@ export default defineConfig({
     publicFolder: 'public'
   },
   media: {
-    tina: {
-      mediaRoot: '/src/assets/images',
-      publicFolder: ''
-    }
+    loadCustomStore: async () => {
+      const pack = await import("next-tinacms-cloudinary");
+      return pack.TinaCloudCloudinaryMediaStore;
+    },
   },
   schema: {
     collections: [
