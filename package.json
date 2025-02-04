@@ -20,7 +20,7 @@
 		"url": "https://github.com/lizterangelo/group5-blog/issues"
 	},
 	"scripts": {
-		"dev": "tinacms \"astro dev\"",
+		"dev": "tinacms dev -c \"astro dev\"",
 		"start": "astro dev",
 		"build": "tinacms build && astro build",
 		"sync": "astro sync",
