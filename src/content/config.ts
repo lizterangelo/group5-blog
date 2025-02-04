@@ -14,7 +14,7 @@ const blog = defineCollection({
 				.transform((val) => new Date(val)),
       		heroImage: z.string(),
 			category: z.enum(CATEGORIES),
-			tags: z.array(z.string()),
+			tags: z.array(z.string()).default([]),
 			draft: z.boolean().default(false)
 		})
 })
