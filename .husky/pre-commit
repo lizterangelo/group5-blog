@@ -13,4 +13,3 @@ echo "PATH in pre-commit: $PATH"
 . "$(dirname "$0")/_/husky.sh"
 
 # Now run lint-staged via pnpm
-pnpm exec lint-staged

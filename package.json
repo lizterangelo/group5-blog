@@ -3,11 +3,11 @@
 	"type": "module",
 	"version": "1.1.0",
 	"description": "A template for creating a blog with Astro",
-	"author": "danielcgilibert",
+	"author": "lizterangelo",
 	"license": "GPL-3.0-only",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/danielcgilibert/blog-template"
+		"url": "https://github.com/lizterangelo/group5-blog"
 	},
 	"keywords": [
 		"astro",
@@ -17,10 +17,10 @@
 		"astro-b"
 	],
 	"bugs": {
-		"url": "https://github.com/danielcgilibert/blog-template/issues"
+		"url": "https://github.com/lizterangelo/group5-blog/issues"
 	},
 	"scripts": {
-		"dev": "npx tinacms dev -c \"astro dev\"",
+		"dev": "tinacms dev -c \"astro dev\"",
 		"start": "astro dev",
 		"build": "astro build",
 		"sync": "astro sync",
@@ -69,5 +69,5 @@
 			"prettier --write --plugin-search-dir=."
 		]
 	},
-	"packageManager": "pnpm@9.15.5+sha1.cb1f6372ef64e2ba352f2f46325adead1c99ff8f"
+	"packageManager": "npm@9.15.5+sha1.cb1f6372ef64e2ba352f2f46325adead1c99ff8f"
 }
