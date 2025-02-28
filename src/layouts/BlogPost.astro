@@ -39,6 +39,9 @@ const articleDate = pubDate.toISOString()
 				<h1 class='text-center text-4xl md:text-6xl md:pb-2.5 font-semibold'>
 					{title}
 				</h1>
+				<p class='text-center text-lg text-opacity-75'>
+					by Lizter Angelo Abrau, Donna Mae Mozo, Agnes Sherlyn Napoles, Ellenmarie Frances Puyot
+				</p>
 			</div>
 
 			<div class='flex flex-wrap justify-center items-center gap-2 gap-y-4 md:gap-5'>
@@ -81,7 +84,7 @@ const articleDate = pubDate.toISOString()
 				const index = document.querySelector(`aside a[href="#${entry.target.id}"]`)
 
 				if (entry.isIntersecting) {
-					index?.classList.remove('bg-slate-200', 'dark:bg-slate-800') // remove bg
+					index?.classList.remove('bg-slate-200', 'dark:bg-slate-800')
 					index?.classList.add(
 						'bg-indigo-600',
 						'dark:bg-indigo-700',
@@ -91,7 +94,7 @@ const articleDate = pubDate.toISOString()
 						'duration-200'
 					)
 				} else {
-					index?.classList.add('bg-slate-200', 'dark:bg-slate-800') // add bg
+					index?.classList.add('bg-slate-200', 'dark:bg-slate-800')
 					index?.classList.remove(
 						'bg-indigo-600',
 						'dark:bg-indigo-700',

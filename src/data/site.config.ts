@@ -10,9 +10,9 @@ interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-	site: 'https://group5-blog.vercel.app/', // Write here your website url
+	site: 'https://the5quills.vercel.app/', // Write here your website url
 	author: 'Group 5', // Site author
-	title: 'CMSC 134 - Group 5 Blog', // Site title.
+	title: 'The 5quills', // Site title.
 	description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.', // Description to display in the meta tags
 	lang: 'en-GB',
 	ogLocale: 'en_GB',
