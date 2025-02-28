@@ -13,7 +13,7 @@ title: 'Machine Problem 1: Buffer Overflow to Exit'
 
 *(describe the goal of the machine problem)*
 
----
+***
 
 ## 1. Compiling Ellenmarie Frances Puyot
 
@@ -26,6 +26,7 @@ Create the file `vuln.c`:
 ```
 
 **vuln.c**
+
 ```c
 #include <stdio.h>
 
@@ -49,12 +50,13 @@ $ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z e
 ```
 
 **Explanation of the flags:**
-- **-m32:** Compile for 32-bit architecture.
-- **-fno-stack-protector:** Disables stack protection (no canary values).
-- **-mpreferred-stack-boundary=2:** Forces a 4-byte aligned stack.
-- **-fno-pie:** Creates a non-position-independent executable.
-- **-ggdb:** Includes debugging symbols.
-- **-z execstack:** Allows execution of code on the stack.
+
+* **-m32:** Compile for 32-bit architecture.
+* **-fno-stack-protector:** Disables stack protection (no canary values).
+* **-mpreferred-stack-boundary=2:** Forces a 4-byte aligned stack.
+* **-fno-pie:** Creates a non-position-independent executable.
+* **-ggdb:** Includes debugging symbols.
+* **-z execstack:** Allows execution of code on the stack.
 
 If you're not on Linux, install WSL:
 
@@ -62,6 +64,8 @@ If you're not on Linux, install WSL:
 > install wsl (since no linux) Ellenmarie Frances Puyot
 > run gcc command
 ```
+
+![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763211/1_any92n.png)
 
 Then install gcc:
 
@@ -72,13 +76,15 @@ Then install gcc:
 
 *(There may be a warning, but the binary file/executable should still be created.)*
 
+**![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763214/2_iher2b.png)
+
 Install GDB for finding addresses:
 
 ```bash
 > sudo apt install gdb
 ```
 
----
+***
 
 ## 2. Finding Addresses
 
@@ -87,6 +93,8 @@ Start GDB with the vulnerable binary:
 ```bash
 > gdb vuln
 ```
+
+![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763221/4_zdnpvp.png)
 
 Set a breakpoint at the vulnerable function:
 
@@ -150,7 +158,7 @@ Stack level 0, frame at 0xffffd038:
   ebp at 0xffffd030, eip at 0xffffd034
 ```
 
----
+***
 
 ## 3. Obtaining Machine Code
 
@@ -197,7 +205,7 @@ $ objdump -d asm > asmdump
     119d:    c3               ret
 ```
 
----
+***
 
 ## Before Writing Down the Shellcode
 
@@ -231,7 +239,7 @@ int main() {
     119d:    c3               ret
 ```
 
----
+***
 
 ## 4. Writing Down the Shellcode
 
@@ -243,7 +251,7 @@ Write the shellcode (machine code bytes) into a file named `egg`:
 
 *This command writes the specified bytes without adding a newline, preparing them for injection.*
 
----
+***
 
 ## 5. Running the Program in GDB
 
@@ -254,7 +262,6 @@ Run the vulnerable program in GDB and feed the shellcode:
 > run < egg
 ```
 
----
+***
 
 This guide walked through compiling a vulnerable C program, identifying key memory addresses with GDB, obtaining machine code with `objdump`, modifying the assembly to create shellcode, and finally running the exploit.
-
