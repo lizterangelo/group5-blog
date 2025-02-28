@@ -76,14 +76,16 @@ Then install gcc:
 
 *(There may be a warning, but the binary file/executable should still be created.)*
 
-**![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763214/2_iher2b.png)
+\*\*![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763214/2_iher2b.png)
 
 Install GDB for finding addresses:
 
 ```bash
 > sudo apt install gdb
 ```
-hello
+
+![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763218/3_pkaxcu.png)
+
 ***
 
 ## 2. Finding Addresses
@@ -261,7 +263,9 @@ Run the vulnerable program in GDB and feed the shellcode:
 > gdb run
 > run < egg
 ```
-hello
+
+![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763225/5_ymr9ig.png)![](https://res.cloudinary.com/dphoq3loc/image/upload/v1740763229/6_pp0gqw.png)
+
 ***
 
 This guide walked through compiling a vulnerable C program, identifying key memory addresses with GDB, obtaining machine code with `objdump`, modifying the assembly to create shellcode, and finally running the exploit.
