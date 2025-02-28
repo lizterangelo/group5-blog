@@ -9,9 +9,9 @@ tags:
 title: 'Machine Problem 1: Buffer Overflow to Exit'
 ---
 
-## 0 Intuition
+## 0. Intuition
 
-*(describe the goal of the machine problem)*
+The goal of this machine problem is to exploit a buffer overflow vulnerability in a given C program to forcefully exit with a return code of 1. The program vuln.c contains a function vulnc() that reads user input into a fixed-size buffer (char buffer\[8];) without bounds checking using gets(buffer);. This allows an attacker to overwrite adjacent memory, including the saved instruction pointer (EIP), to hijack execution flow and inject malicious shellcode.
 
 ***
 
