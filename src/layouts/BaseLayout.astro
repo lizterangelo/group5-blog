@@ -6,14 +6,12 @@ import ProviderTheme from '@/components/ProviderTheme'
 import ProviderAnimations from '@/components/ProviderAnimations'
 import TwSizeIndicator from '@/components/TwSizeIndicator'
 import EditBlog from '@/components/editBlog'
-import { LoadingDots } from 'tinacms'
 const { title, description, image, articleDate } = Astro.props
-const logoImage = '/logo.svg'
 ---
 
 <html lang='en' class='scroll-smooth'>
 	<head>
-		<BaseHead title={title} description={description} ogImage={logoImage} articleDate={articleDate} />
+		<BaseHead title={title} description={description} ogImage={image} articleDate={articleDate} />
 		<ProviderTheme />
 		<ProviderAnimations />
 	</head>
