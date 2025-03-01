@@ -17,7 +17,7 @@ Our vulnerable C program (vuln.c) asks for your name but doesn’t check the siz
 
 Instead of letting the program run forever, we’ll inject a special input to hijack execution and make it exit with a return code of 1.
 
-Our "Mischievous" Plan:
+### Our "Mischievous" Plan:
 1. Compile with weak security
 2. Find memory targets using GDB
 3. Rewrite the return address to force an exit.
