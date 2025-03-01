@@ -1,13 +1,13 @@
 ---
 heroImage: >-
-  https://res.cloudinary.com/dphoq3loc/image/upload/v1738940749/cybersecurity_qpgi4x.jpg
+  https://res.cloudinary.com/dphoq3loc/image/upload/v1740834385/coverphoto_x348np.gif
 category: For Sir Eli
 description: An Article On Buffer Overflow to Exit
 pubDate: 2025-02-28T16:00:00.000Z
 tags:
   - Linux
   - Machine Problem
-title: 'AITA for Spilling Bytes and Crashing the Code?'
+title: AITA for Spilling Bytes and Crashing the Code?
 ---
 
 ## 0. AITA for Exploiting a Bug?
@@ -16,7 +16,7 @@ Imagine you get a tiny coffee cup at a café—but instead of stopping at the to
 
 In our vulnerable C program, a small buffer is allocated (8 bytes) for a name input, but because the program uses an unsafe function that doesn’t check the input length (namely, `gets()`), we can overflow this buffer. By overflowing, we overwrite the saved return address in memory and hijack program execution—much like spilling coffee in just the right spot to shut down a laptop.
 
----
+***
 
 ## 1. Compiling the Vulnerable Program
 
@@ -42,12 +42,12 @@ $ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z e
 
 **Flag explanations:**
 
-- **-m32**: Compile for 32-bit architecture  
-- **-fno-stack-protector**: Disable stack protection (no canary values)  
-- **-mpreferred-stack-boundary=2**: Forces a 4-byte aligned stack  
-- **-fno-pie**: Disables Position Independent Executable  
-- **-ggdb**: Includes debugging symbols  
-- **-z execstack**: Allows execution of code on the stack
+* **-m32**: Compile for 32-bit architecture
+* **-fno-stack-protector**: Disable stack protection (no canary values)
+* **-mpreferred-stack-boundary=2**: Forces a 4-byte aligned stack
+* **-fno-pie**: Disables Position Independent Executable
+* **-ggdb**: Includes debugging symbols
+* **-z execstack**: Allows execution of code on the stack
 
 *Note: If you run into an error like `fatal error: bits/libc-header-start.h: No such file or directory`, you need to install multilib support:*
 
@@ -58,7 +58,7 @@ $ sudo apt install gcc-multilib libc6-dev-i386
 
 After installing the required dependencies, recompile the program. You might see warnings about using the deprecated `gets()` function, but that’s expected.
 
----
+***
 
 ## 2. Finding Addresses with gdb
 
@@ -108,7 +108,7 @@ Then, examine the stack frame to locate the saved return address:
 
 You might see that the saved return address is stored at an address such as `0xffffd034`. This is the target we want to overwrite with our shellcode’s address.
 
----
+***
 
 ## 3. Obtaining Machine Code
 
@@ -141,10 +141,10 @@ $ objdump -d asm > asmdump
 
 The dump will show instructions such as:
 
-- `31 c0` → `xor    %eax, %eax`
-- `40`    → `inc    %eax`
-- `89 c3` → `mov    %eax, %ebx`
-- `cd 80` → `int    $0x80`
+* `31 c0` → `xor    %eax, %eax`
+* `40`    → `inc    %eax`
+* `89 c3` → `mov    %eax, %ebx`
+* `cd 80` → `int    $0x80`
 
 **Modified version for clean exit:**
 
@@ -166,7 +166,7 @@ Recompile and run `objdump` again to get the modified machine code. The final sh
 "\x31\xc0\x40\x89\xc3\xcd\x80"
 ```
 
----
+***
 
 ## 4. Writing Down the Shellcode and Constructing the Payload
 
@@ -178,13 +178,13 @@ echo -ne "\x31\xc0\x40\x89\xc3\xcd\x80\x41\x41\x41\x41\x41\x28\xd0\xff\xff" > eg
 
 Here’s what each part represents:
 
-- **Padding (`\x41`…):** Fills the buffer (ASCII 'A's).
-- **Address overwrite (`\x28\xd0\xff\xff`):** Overwrites the saved return address with the start of the buffer (e.g., `0xffffd028`).
-- **Shellcode (`\x31\xc0\x40\x89\xc3\xcd\x80`):** Executes the system call to exit with code 1.
+* **Padding (`\x41`…):** Fills the buffer (ASCII 'A's).
+* **Address overwrite (`\x28\xd0\xff\xff`):** Overwrites the saved return address with the start of the buffer (e.g., `0xffffd028`).
+* **Shellcode (`\x31\xc0\x40\x89\xc3\xcd\x80`):** Executes the system call to exit with code 1.
 
 You can tweak the number of padding bytes or the address depending on your environment.
 
----
+***
 
 ## 5. Running the Program in gdb
 
@@ -208,21 +208,21 @@ A successful exploit will hijack execution so that the shellcode is run, and you
 
 This confirms that the buffer overflow successfully redirected execution to your shellcode.
 
----
+***
 
 ## TL;DR
 
-- **Exploit Overview:** Overflow an 8-byte buffer to overwrite the saved return address.
-- **Goal:** Redirect execution to injected shellcode that calls `int 0x80` to exit with code 1.
-- **Process:**  
-  1. Compile the vulnerable program with weak security settings.  
-  2. Use gdb to locate memory addresses and the return address.  
-  3. Craft and obtain machine code for your shellcode.  
-  4. Create a payload (egg file) with padding, overwritten address, and shellcode.  
+* **Exploit Overview:** Overflow an 8-byte buffer to overwrite the saved return address.
+* **Goal:** Redirect execution to injected shellcode that calls `int 0x80` to exit with code 1.
+* **Process:**
+  1. Compile the vulnerable program with weak security settings.
+  2. Use gdb to locate memory addresses and the return address.
+  3. Craft and obtain machine code for your shellcode.
+  4. Create a payload (egg file) with padding, overwritten address, and shellcode.
   5. Run the exploit via gdb to confirm success.
 
 ✅ **Exploit successful!**
 
----
+***
 
 *Note:* Always ensure that such exploits are performed only in controlled environments and with permission. This write-up is for educational purposes only.
