@@ -19,9 +19,9 @@ Imagine passing a secret note in class, but instead of writing it in plain Engli
 
  That’s the power of cryptography in action, ensuring CIA (no, not that CIA, we mean the security principles):
 
-* Confidentiality: The message stays private (RSA-OAEP encryption).
-* Integrity: No one can tamper with it undetected (digital signature).
-* Authenticity: The recipient knows it’s from you (signing key).
+* **Confidentiality**: The message stays private (RSA-OAEP encryption).
+* **Integrity**: No one can tamper with it undetected (digital signature).
+* **Authenticity**: The recipient knows it’s from you (signing key).
 
 For this task, we implement an encrypt-then-sign approach using cryptographic libraries, ensuring both secrecy and authenticity without rolling our own crypto. Our program will:
 
@@ -147,7 +147,7 @@ def sign_message(ciphertext_b64, private_key):
 
 ## 5 Verifying the Signature Before Decrypting
 
-This is a crucial step. We verify the signature before decrypting. If the signature is invalid, we stop. No decrypting tampered tea.
+*This is a crucial step*. We verify the signature before decrypting. If the signature is invalid, we stop. No decrypting tampered tea.
 
 ```python
 def verify_signature(ciphertext_b64, signature_b64, public_key):
@@ -211,12 +211,11 @@ Ciphertext: filFrHkEWe2LKxNbTntvbDwfEY2TGaO+ePAYzofF3LiXFKTS25QehNyvBueiGZ7hH/W3
 Signature: oatTMtk4n78f9KqQTUdSblJd1iWM4ZCr02fECmW5UqndRaFydW0QWZ0pjq1el1Ufo0wnaAXaYoghJEFoZkWBWWrCTeFo6uY/fb/ZEauvibYVt4+TlelIAGMpP2P6SE/8WQE9s5UZZmSodHQ/gzaacGv+7E3cu1jV+WJmOJUM+vJIsAHsrNMUg98yi7vDL9Aygh4OiKRf/WXlBZD1203V0Br8XrL1SDXY6GRXvFRbHuhxjHzSpixa1jgRGnq3LOusDUTS7Q12/SfKSSov5/OXSoBGHqi/vzo2j1Pd6UDzbYv5FlA5ZS1Al8wXm88Ox6nQsrkkjOFkYVqRyvfyNiaapg==
 Decrypted Message: Secret rendezvous @ midnight
 
-
 ```
 
 ### Why This Approach?
 
-This Encrypt-Then-Sign method is superior because:
+This ***Encrypt-Then-Sign*** method is superior because:
 
 * If the signature is invalid, decryption is never attempted, preventing unnecessary computation and attacks.
 * Ensures both confidentiality and authenticity in one robust system.
@@ -226,10 +225,14 @@ This Encrypt-Then-Sign method is superior because:
 ### Final Verdict
 
 🔴 You’re asking for trouble if you DIY cryptography (seriously, leave it to the pros).
+
+
 🟡 We’re guilty of encrypting questionable messages, but hey—learning requires experimentation.
+
+
 🟢 Cryptography wins because now we know how to properly secure messages with encryption and authenticity.
 
-Lesson learned: Never trust plaintext. Always assume someone is lurking, trying to spill your tea. Encrypt-then-sign for double protection. And always verify before you decrypt—because a fake message is worse than no message at all.
+**Lesson learned:** Never trust plaintext. Always assume someone is lurking, trying to spill your tea. Encrypt-then-sign for double protection. And always verify before you decrypt—because a fake message is worse than no message at all.
 
 So next time you hit send, just remember—your message should be locked, signed, and sealed before it flies. After all, the best way to keep a secret... is to never let it slip in the first place. ☕🔐
 
