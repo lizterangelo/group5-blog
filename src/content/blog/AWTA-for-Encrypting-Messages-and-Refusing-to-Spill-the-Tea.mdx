@@ -13,7 +13,7 @@ tags:
 title: AWTA for Encrypting Messages and Refusing to Spill the Tea?
 ---
 
-0 AWTA for Keeping our Secrets Safe?
+## 0 AWTA for Keeping our Secrets Safe?
 
 Imagine passing a secret note in class, but instead of writing it in plain English, you encrypt it so only your friend can read it. Even better—you stamp it with a digital signature so your friend knows for sure that it came from you and not some impostor trying to stir up drama.
 
@@ -32,7 +32,7 @@ For this task, we implement an encrypt-then-sign approach using cryptographic li
 
 By the end, we’ll have a secure way to share messages—no spills, no leaks, just cryptographic assurance. Now, let’s dive into the implementation!
 
-1 Setup: Install Dependencies
+## 1 Setup: Install Dependencies
 
 We used Python’s powerful cryptography library to safely handle all encryption, decryption, signing, and verification tasks.
 
@@ -44,7 +44,7 @@ import os
 
 ```
 
-2 Key Generation: Encryption and Signing
+## 2 Key Generation: Encryption and Signing
 
 To achieve the Encrypt-Then-Sign scheme, we generated two key pairs:
 
@@ -57,7 +57,6 @@ To achieve the Encrypt-Then-Sign scheme, we generated two key pairs:
 
 * Signs with the private key
 * Verifies with the public key
-
 
 ```python
 def generate_rsa_keypair():
@@ -102,7 +101,7 @@ def load_key(filename, is_private=False):
 
 All keys are securely generated and saved to .pem files. Future runs can load them back to avoid regenerating every time.
 
-3 Encrypting the Message (RSA\_OAEP)
+## 3 Encrypting the Message (RSA\_OAEP)
 
 To ensure confidentiality, we encrypt the message using RSA-OAEP (Optimal Asymmetric Encryption Padding). Why OAEP? It enhances the basic RSA with semantic security to guard against chosen ciphertext attacks.
 
@@ -124,8 +123,7 @@ def encrypt_message(message, public_key):
 
 Then, we encode the result in Base64 so it's easy to store, send, or print. This ensures that only the recipient (who has the private key) can decrypt the message.
 
-
-4 Signing the Encrypted Message (RSA-PSS)
+## 4 Signing the Encrypted Message (RSA-PSS)
 
 Once the message is encrypted, we sign the ciphertext to ensure authenticity and integrity. This means if someone tries to tamper with the ciphertext—even one bit—the signature check will fail.
 
@@ -147,8 +145,7 @@ def sign_message(ciphertext_b64, private_key):
 
 ```
 
-
-5 Verifying the Signature Before Decrypting
+## 5 Verifying the Signature Before Decrypting
 
 This is a crucial step. We verify the signature before decrypting. If the signature is invalid, we stop. No decrypting tampered tea.
 
@@ -177,7 +174,7 @@ def verify_signature(ciphertext_b64, signature_b64, public_key):
 
 ```
 
-6 Decrypting the Message (Only If Verified)
+## 6 Decrypting the Message (Only If Verified)
 
 Once verification is successful, the receiver decrypts the message using the private key:
 
@@ -197,7 +194,6 @@ def decrypt_message(ciphertext, private_key):
     return plaintext.decode()
 ```
 
-
 Only the intended recipient with the private key can read it. Confidentiality unlocked.
 
 ## Full Secure Messaging Workflow
@@ -207,7 +203,7 @@ Only the intended recipient with the private key can read it. Confidentiality un
 
 No signature? No decrypt. No authenticity? No trust.
 
-Sample Run
+## Sample Run
 
 ```
 Enter a message (max 140 chars): Secret rendezvous @ midnight
@@ -218,24 +214,20 @@ Decrypted Message: Secret rendezvous @ midnight
 
 ```
 
-
-Why This Approach?
+### Why This Approach?
 
 This Encrypt-Then-Sign method is superior because:
 
 * If the signature is invalid, decryption is never attempted, preventing unnecessary computation and attacks.
 * Ensures both confidentiality and authenticity in one robust system.
 
-
-
-
 ### So, AWTA for Keeping our Secrets Safe?
 
-### Final Verdict
+## Final Verdict
 
-🔴    You’re asking for trouble if you DIY cryptography (seriously, leave it to the pros).
+🔴 You’re asking for trouble if you DIY cryptography (seriously, leave it to the pros).
 🟡 We’re guilty of encrypting questionable messages, but hey—learning requires experimentation.
- 🟢 Cryptography wins because now we know how to properly secure messages with encryption and authenticity.
+🟢 Cryptography wins because now we know how to properly secure messages with encryption and authenticity.
 
 Lesson learned: Never trust plaintext. Always assume someone is lurking, trying to spill your tea. Encrypt-then-sign for double protection. And always verify before you decrypt—because a fake message is worse than no message at all.
 
@@ -249,4 +241,3 @@ So next time you hit send, just remember—your message should be locked, signed
 > Maybe. 😏 But if keeping your tea secure makes you the antagonist…
 
 > Then we’ll happily wear the black hat—because plaintext deserves no mercy.
->
