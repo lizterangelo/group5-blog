@@ -198,8 +198,16 @@ Only the intended recipient with the private key can read it. Confidentiality un
 
 ## Full Secure Messaging Workflow
 
-1. Sender:
-2. Receiver:
+1\. Sender:
+
+* Encrypts the message using the recipient's public key.
+* Signs the encrypted message using their private signing key.
+* Sends both the ciphertext and the signature.
+
+2\. Receiver:
+
+* Verifies the signature using the sender's public signing key.
+* If valid, decrypts the ciphertext using their private key.
 
 No signature? No decrypt. No authenticity? No trust.
 
