@@ -13,236 +13,371 @@ tags:
 title: AWTA for Encrypting Messages and Refusing to Spill the Tea?
 ---
 
-## 0 AWTA for Keeping our Secrets Safe?
+# AWTA for Plotting a Secret Alliance?
 
-Imagine passing a secret note in class, but instead of writing it in plain English, you encrypt it so only your friend can read it. Even better—you stamp it with a digital signature so your friend knows for sure that it came from you and not some impostor trying to stir up drama.
+Let’s set the scene.
+The semester's getting chaotic. The deadlines are closing in. Midterms are looming like final bosses. Just as the pressure hits max level, a wild idea emerges: what if teaming up with another group could actually save us all?
 
- That’s the power of cryptography in action, ensuring **CIA**:
+But here's the dilemma—this kind of proposal? It has to be lowkey. You know how group chats are. One “👀” emoji and suddenly the whole class knows.
 
-* **Confidentiality**: The message stays private (RSA-OAEP encryption).
-* **Integrity**: No one can tamper with it undetected (digital signature).
-* **Authenticity**: The recipient knows it’s from you (signing key).
+So instead of sliding into DMs or passing notes like it’s high school, we go full-on cyber-spy mode. 
+We encrypt the message. We sign it. We don’t just ask for a collab—we cloak it in cryptographic security.
 
-For this task, we implement an encrypt-then-sign approach using cryptographic libraries, ensuring both secrecy and authenticity without rolling our own crypto. Our program will:
+Because in this digital drama, trust is earned through:
 
-* Generate separate key pairs for encryption and signing.
-* Encrypt a short ASCII message (≤140 characters) using RSA-OAEP.
-* Sign the encrypted message for authenticity.
-* Verify the signature before decrypting to ensure message integrity.
+* Confidentiality: The message stays private (RSA-OAEP encryption).
+* Integrity: No one can tamper with it undetected (digital signature).
+* Authenticity: The recipient knows it’s from you (signing key).
 
-By the end, we’ll have a secure way to share messages—no spills, no leaks, just cryptographic assurance. Now, let’s dive into the implementation!
 
-## 1 Setup: Install Dependencies
 
-We used Python’s powerful cryptography library to safely handle all encryption, decryption, signing, and verification tasks.
+
+## 1. The Plan: Encrypt. Sign. Send.
+
+We followed a spy-worthy Encrypt-Then-Sign strategy, using real cryptographic tools (no DIY crypto disasters here). The mission: deliver one short message with absolute secrecy and proof of identity.
+
+```javascript
+Message = "Can we collaborate for a machine problem?"
+```
+
+Simple. Honest. Potentially game-changing.
+
+But instead of dropping that in plaintext for the whole class to see, we wrapped it in layers of security—encrypted for confidentiality, signed for authenticity. Think of it like a digital message in a bottle: wax-sealed, encoded in ancient runes (okay, maybe just Base64), and only readable by the intended recipient.
+
+Our Mission:
+
+* Encrypt the message using RSA-OAEP to keep it private.
+* Sign the encrypted message using RSA-PSS to guarantee it’s really from us and hasn’t been tampered with.
+* Send both the ciphertext and the signature to the other group—secure, verifiable, and completely stealthy.
+
+No leaks. No doubts. Just a secure signal sent through the chaos.
+
+## 2. Setup: Install Dependencies
+
+To kick off the plan, we decided to leverage Google Colab to carry out our cryptographic mission. Colab provided a convenient, cloud-based environment where we could easily run Python code without worrying about setup or dependencies on local machines. This made it an ideal platform for implementing the encryption and signing process, ensuring that our project was both accessible and efficient. We hosted our project on[ this Colab notebook](https://colab.research.google.com/drive/1f-B5sYd9UcKky_8GuV2EQM5oRznKoHXh), which made it an ideal platform for implementing the encryption and signing process, ensuring that our project was both accessible and efficient. By using Colab, we could seamlessly run the cryptographic operations required to keep our message confidential, authentic, and tamper-proof, all while sharing the code with ease. From generating RSA key pairs to encrypting and signing messages, Colab served as our digital lab for creating a secure communication channel with minimal friction.
+
+We used Python’s powerful cryptography library—a battle-tested toolbox for handling encryption, decryption, signing, and verification without the risk of rolling our own crypto. Alongside it, we’ve got a few helpers:
 
 ```python
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes, serialization
 import base64
 import os
-
 ```
 
-## 2 Key Generation: Encryption and Signing
 
-To achieve the Encrypt-Then-Sign scheme, we generated two key pairs:
 
-1\. Encryption Key Pair (used for RSA-OAEP):
 
-* Encrypts the message with the public key
-* Decrypts it with the private key
+🔐 rsa – For generating key pairs and performing asymmetric encryption/decryption.
 
-2\. Signing Key Pair (used for RSA-PSS):
+📦 padding – To securely wrap messages using schemes like OAEP and PSS.
 
-* Signs with the private key
-* Verifies with the public key
+🔍 hashes – For cryptographic hashing (SHA-256, in our case), crucial for both encryption padding and signing.
+
+📄 serialization – For saving/loading keys in PEM format.
+
+📬 base64 – Encodes binary ciphertext/signatures into a text-friendly format (makes it easy to print or transmit).
+
+🗂️ os – For general file operations and generating randomness when needed.
+
+Together, these libraries form the toolkit that makes our encrypted collab proposal possible—safe, secure, and no sketchy hacks involved.
+
+
+
+
+## 3. Key Generation: Encryption and Signing
+
+To achieve the Encrypt-Then-Sign mission, we needed two separate RSA key pairs—one for confidentiality, the other for authenticity.
+
+* Encryption Key Pair (used for RSA-OAEP):
+  * Encrypts the message with the public key
+  * Decrypts it with the private key
+* Signing Key Pair (used for RSA-PSS):
+  * Signs the message with the private key
+  * Verifies the signature with the public key
+
+No keys, no crypto—so here’s how we made them:
+
+Key Generation & Management Code
 
 ```python
 def generate_rsa_keypair():
-    """Generate an RSA key pair (private & public key)."""
-    private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-    )
-    public_key = private_key.public_key()
-    return private_key, public_key
-
-
-def save_key(key, filename, is_private=False):
-    """Save RSA keys to a file."""
-    if is_private:
-        pem = key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption(),
-        )
-    else:
-        pem = key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        )
-
-
-    with open(filename, "wb") as f:
-        f.write(pem)
-
-
-def load_key(filename, is_private=False):
-    """Load RSA keys from a file."""
-    with open(filename, "rb") as f:
-        key_data = f.read()
-    if is_private:
-        return serialization.load_pem_private_key(key_data, password=None)
-    return serialization.load_pem_public_key(key_data)
-
+"""Generate an RSA key pair (private & public key)."""
+private_key = rsa.generate_private_key(
+  public_exponent = 65537,
+  key_size = 2048,
+)
+public_key = private_key.public_key()
+return private_key, public_key
 
 ```
 
-All keys are securely generated and saved to .pem files. Future runs can load them back to avoid regenerating every time.
+✅ public\_exponent=65537: a widely used, secure default.
 
-## 3 Encrypting the Message (RSA\_OAEP)
+✅ key\_size=2048: strong enough for our message while staying performant.
 
-To ensure confidentiality, we encrypt the message using RSA-OAEP (Optimal Asymmetric Encryption Padding). Why OAEP? It enhances the basic RSA with semantic security to guard against chosen ciphertext attacks.
+Save/Load Keys
+
+We saved the keys to .pem files so we don’t have to regenerate them every time (because no one wants to lose their keys halfway through a mission).
+
+Note that in practice, private keys should be protected (e.g., password-encrypted or stored in a secure environment) while public keys can be freely shared—send those out with confidence.
+
+```python
+def save_key(key, filename, is_private = False):
+"""Save RSA keys to a file."""
+if is_private:
+  pem = key.private_bytes(
+    encoding = serialization.Encoding.PEM,
+    format = serialization.PrivateFormat.PKCS8,
+    encryption_algorithm = serialization.NoEncryption(),
+  )
+else:
+pem = key.public_bytes(
+  encoding = serialization.Encoding.PEM,
+  format = serialization.PublicFormat.SubjectPublicKeyInfo,
+)
+
+
+
+with open(filename, "wb") as f:
+f.write(pem)
+
+
+
+def load_key(filename, is_private = False):
+"""Load RSA keys from a file."""
+with open(filename, "rb") as f:
+key_data = f.read()
+if is_private:
+  return serialization.load_pem_private_key(key_data, password = None)
+return serialization.load_pem_public_key(key_data)
+
+```
+
+
+
+
+All keys are securely generated and saved to .pem files. Future runs can load them back to avoid regenerating every time. Four keys, two pairs, one mission: keep our message locked down and our identity crystal clear.
+
+
+
+
+## 4. Encrypting the Message (RSA\_OAEP)
+
+To keep our message confidential, we encrypt it using RSA-OAEP (Optimal Asymmetric Encryption Padding). But why OAEP? Well, it’s not just your standard RSA—it enhances the basic RSA scheme with semantic security. This prevents certain attacks, like chosen ciphertext attacks, where an attacker could manipulate encrypted data to try to learn something about the plaintext.
+
+Here’s how we do it:
+
+1. We use the recipient's public key to encrypt the message.
+2. We apply RSA-OAEP padding to the message before encrypting, which ensures the message stays secure even if someone tries to mess with it.
+
+* The padding ensures that even if two identical messages are encrypted with the same public key, their ciphertexts will be different. This guards against potential attackers trying to analyze patterns in encrypted messages.
+
+1. Finally, we encode the encrypted message using Base64, making it easy to send over text-based protocols (like email, or as part of a JSON payload) while ensuring it’s still binary-safe.
+
+* Once we encrypt the message, it’s binary data. Base64 converts it into ASCII text, which makes it easy to transmit and store, but still keeps the content secure—since only the receiver’s private key can decrypt it.
 
 ```python
 def encrypt_message(message, public_key):
-    """Encrypts a message using RSA-OAEP."""
-    ciphertext = public_key.encrypt(
-        message.encode(),
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
-    )
-    return base64.b64encode(ciphertext)  
+"""Encrypts a message using RSA-OAEP."""
+ciphertext = public_key.encrypt(
+  message.encode(),
+  padding.OAEP(
+    mgf = padding.MGF1(algorithm = hashes.SHA256()),
+    algorithm = hashes.SHA256(),
+    label = None,
+  ),
+)
+return base64.b64encode(ciphertext)
 
 
 ```
 
-Then, we encode the result in Base64 so it's easy to store, send, or print. This ensures that only the recipient (who has the private key) can decrypt the message.
 
-## 4 Signing the Encrypted Message (RSA-PSS)
 
-Once the message is encrypted, we sign the ciphertext to ensure authenticity and integrity. This means if someone tries to tamper with the ciphertext—even one bit—the signature check will fail.
 
-We use RSA-PSS with SHA-256, a modern and secure signing scheme:
+## 5. Signing the Encrypted Message (RSA-PSS)
+
+Once the message is encrypted, we take an extra step to ensure authenticity and integrity: we sign the ciphertext using our private signing key. This is important because if someone tries to tamper with the encrypted message, even by changing a single bit, the signature verification will fail.
+
+For signing, we use RSA-PSS (Probabilistic Signature Scheme) with SHA-256, a modern and secure signing method that guarantees both security and flexibility.
+
+Here’s the signing function:
 
 ```python
 def sign_message(ciphertext_b64, private_key):
-    """Signs the raw encrypted message (bytes) using RSA-PSS."""
-    ciphertext_bytes = base64.b64decode(ciphertext_b64)  
-    signature = private_key.sign(
-        ciphertext_bytes,
-        padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH,
-        ),
-        hashes.SHA256(),
-    )
-    return base64.b64encode(signature)
+"""Signs the raw encrypted message (bytes) using RSA-PSS."""
+ciphertext_bytes = base64.b64decode(ciphertext_b64)
+signature = private_key.sign(
+  ciphertext_bytes,
+  padding.PSS(
+    mgf = padding.MGF1(hashes.SHA256()),
+    salt_length = padding.PSS.MAX_LENGTH,
+  ),
+  hashes.SHA256(),
+)
+return base64.b64encode(signature)
+
 
 ```
 
-## 5 Verifying the Signature Before Decrypting
 
-*This is a crucial step*. We verify the signature before decrypting. If the signature is invalid, we stop. No decrypting tampered tea.
+
+
+## 6. Verifying the Signature Before Decrypting
+
+This is a crucial step. Before we even think about decrypting the message, we verify the signature. This step ensures that the message hasn't been tampered with and that it's genuinely from the sender. If the signature doesn't match, we stop right there—no decryption is attempted. This helps us avoid any potential fake or modified messages.
+
+Here’s how we verify the signature:
 
 ```python
 def verify_signature(ciphertext_b64, signature_b64, public_key):
-    """Verifies the signature against the raw ciphertext bytes."""
-    ciphertext_bytes = base64.b64decode(ciphertext_b64)  # Convert Base64 → bytes
-    signature_bytes = base64.b64decode(signature_b64)  # Convert Base64 → bytes
+"""Verifies the signature against the raw ciphertext bytes."""
+ciphertext_bytes = base64.b64decode(ciphertext_b64)  # Convert Base64 → bytes
+signature_bytes = base64.b64decode(signature_b64)  # Convert Base64 → bytes
 
 
-    try:
-        public_key.verify(
-            signature_bytes,
-            ciphertext_bytes,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH,
-            ),
-            hashes.SHA256(),
-        )
-        return True
-    except Exception as e:
-        print(f"Signature verification failed: {e}")
-        return False
 
+try:
+public_key.verify(
+  signature_bytes,
+  ciphertext_bytes,
+  padding.PSS(
+    mgf = padding.MGF1(hashes.SHA256()),
+    salt_length = padding.PSS.MAX_LENGTH,
+  ),
+  hashes.SHA256(),
+)
+return True
+    except Exception as e:
+print(f"Signature verification failed: {e}")
+return False
 
 ```
 
-## 6 Decrypting the Message (Only If Verified)
 
-Once verification is successful, the receiver decrypts the message using the private key:
 
-This restores the original message in a secure manner.
+
+## 7. Decrypting the Message (Only If Verified)
+
+Once the signature has been verified, we proceed to decrypt the message using the private decryption key. This ensures that the original message is securely retrieved and can only be read by the recipient who holds the corresponding private key.
+
+Here’s the decryption function:
 
 ```python
 def decrypt_message(ciphertext, private_key):
-    """Decrypts a message using RSA-OAEP."""
-    plaintext = private_key.decrypt(
-        base64.b64decode(ciphertext),
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
-    )
-    return plaintext.decode()
+"""Decrypts a message using RSA-OAEP."""
+plaintext = private_key.decrypt(
+  base64.b64decode(ciphertext),
+  padding.OAEP(
+    mgf = padding.MGF1(algorithm = hashes.SHA256()),
+    algorithm = hashes.SHA256(),
+    label = None,
+  ),
+)
+return plaintext.decode()
+
 ```
 
-Only the intended recipient with the private key can read it. Confidentiality unlocked.
 
-## Full Secure Messaging Workflow
 
-1\. Sender:
 
-* Encrypts the message using the recipient's public key.
-* Signs the encrypted message using their private signing key.
-* Sends both the ciphertext and the signature.
+Only the intended recipient with the private key can decrypt it—read it. Confidentiality unlocked.
 
-2\. Receiver:
+## 8 Full Secure Messaging Workflow
 
-* Verifies the signature using the sender's public signing key.
-* If valid, decrypts the ciphertext using their private key.
+1. Sender:
+2. Receiver:
 
 No signature? No decrypt. No authenticity? No trust.
 
-## Sample Run
+## 9 The Grand Reveal
+
+When the other group receives the message, they verify the signature. Once confirmed that there’s no tampering and it’s genuinely from us, they use their private key to decrypt the message.
+
+Example Input:
+
+Message:
 
 ```
-Enter a message (max 140 chars): Secret rendezvous @ midnight
-Ciphertext: filFrHkEWe2LKxNbTntvbDwfEY2TGaO+ePAYzofF3LiXFKTS25QehNyvBueiGZ7hH/W3WkglL7mB5jL1I23ex2VfL5Z3AJTzxV2+xeMm0cU60QxhP5l/17qADKboJ0MQFJjNIZ1FvOGjsu7LeNbH5WQi6IqiozNmrGI9XaRs5za/d3pfR1K5DneqMT29nUmidDl9vtEq3V1bHAcxtqkITw4lVFLwL+SkpSAIp9HG6vF4w5sO6M8UOR+XISE1uYttjPsXUrQuD5h6o2A056Y/80pbgonEGLoJ/TN70y9JhzyYJbCZTlZ3lexUQAlPn6nQrmrGWjzEwb+c186Lmj1kTg==
-Signature: oatTMtk4n78f9KqQTUdSblJd1iWM4ZCr02fECmW5UqndRaFydW0QWZ0pjq1el1Ufo0wnaAXaYoghJEFoZkWBWWrCTeFo6uY/fb/ZEauvibYVt4+TlelIAGMpP2P6SE/8WQE9s5UZZmSodHQ/gzaacGv+7E3cu1jV+WJmOJUM+vJIsAHsrNMUg98yi7vDL9Aygh4OiKRf/WXlBZD1203V0Br8XrL1SDXY6GRXvFRbHuhxjHzSpixa1jgRGnq3LOusDUTS7Q12/SfKSSov5/OXSoBGHqi/vzo2j1Pd6UDzbYv5FlA5ZS1Al8wXm88Ox6nQsrkkjOFkYVqRyvfyNiaapg==
-Decrypted Message: Secret rendezvous @ midnight
-
+Enter a message(max 140 chars): Can we collaborate for a machine problem ?
 ```
 
-### Why This Approach?
+Ciphertext (Base64 encoded):
 
-This ***Encrypt-Then-Sign*** method is superior because:
+```
+Ciphertext: op3zvotoV2N + c + kM8 + 66Rszhfgd + WuNKOvQeqcy4TaPmRvBETVEk3jHJ6L1sI0fZjaCWdAd8QJFywHXcB / kIjSmZrJQ2fo8DfrfB5eOPgM6b + 92jHuN + Iq6J2NeU7ThtlAxxBJRiVOY0OHVW71 + nP58mH8neui2GkxJkkd11 / Qw / vtScHA / bXrQ + sNphnQmX7n9iHMPuwD + toleZUlQ0bIphhupPMqlzpmPPXT7dLmTZ8BJCNQMxDDMLtnBrXBusDQXhBn6MYVzyBrvQTlVZMwsGKRDyq + 2RKBfe4nGBbI8KHQkzsBX8Xbt6vP + R0NF1GU3YOchUq0MrO9RZsG63Ig ==
+```
 
-* If the signature is invalid, decryption is never attempted, preventing unnecessary computation and attacks.
-* Ensures both confidentiality and authenticity in one robust system.
+Signature (Base64 encoded):
 
-### So, AWTA for Keeping our Secrets Safe?
+```
+Signature: Nqi4bpea1VKpp25wR60oA3j5m8IIKK006fL7tRP9MHpkhb / uwNzZa / NSL3LU3ee1Z / QowYTqdjBkdITs0DfZyYj8oOg + datMJahyqPm1fApXKW2V2p5v6JioWeGPdYJJIgIoFc2sihOsLndYoQyDlMqWvRDfN9DFRTrZpkUa9 / +/EyZ0uwk1H0tx0V/ + IFDXoObDw5x996jc2bnvMK4FlJxjLPY1y6aYZyxl8w + TILnnsKHAh5vGumbPjTDr7vIeYaPieFI5 / 2yDwm2UCMHkpEPQukrEjyKIu2oFJCNdOa7X7OHxKnVOnMWXw253 + rZ0qRe + Jh57ujYglikvEg7Esg ==
+```
 
-Maybe we are—but in the best possible way. If encrypting our teas, sealing them with digital signatures, and refusing to let anyone spill them makes us the antagonists… then so be it. In a world where data leaks faster than gossip, protecting your messages isn’t shady—it’s smart. Because at the end of the day, being the villain in the name of privacy? That’s a role we’ll gladly play.
+Decrypted Message:
 
-### Final Verdict
+```
+Decrypted Message: Can we collaborate for a machine problem ?
+```
+
+These sample inputs and outputs were captured in the program when run via Google Colab and saved to a log file called sample\_inputs.txt. This log file includes the original message, its encrypted ciphertext, the corresponding signature, and the decrypted message. The sample inputs and outputs were crucial for demonstrating the encryption, signature verification, and decryption process in action. This log file demonstrates the full process from encryption and signing to decryption and verification, ensuring that all the necessary components of the system work seamlessly.
+
+
+
+
+## Why This Approach?
+
+This Encrypt-Then-Sign method is superior because:
+
+* Authenticity and Integrity: Using the signature guarantees that the message is indeed from the sender and hasn’t been altered.
+* Confidentiality: Encrypting the message ensures that only the recipient can read it.
+* Verification before Decrypting: We only decrypt if the signature is valid, preventing tampered or fake messages from being read.
+
+
+
+
+## So, AWTA for Keeping our Collab Plans Top Secret?
+
+Maybe we are—but in the best possible way. If encrypting our deal, sealing them with digital signatures, and refusing to let anyone spill them makes us the antagonists… then so be it. Because in a world where messages leak faster than hot gossip, proposing an alliance through a secure channel isn’t shady. It’s strategic.
+
+We didn’t just suggest a collab—we sent a signed and sealed declaration of teamwork potential.
+
+We didn’t just lock the vault—we armored it with asymmetric encryption, cryptographic signatures, and full CIA (the cybersecurity kind, not the other one).
+
+
+
+
+## Final Verdict
 
 🔴 You’re asking for trouble if you DIY cryptography (seriously, leave it to the pros).
-
 🟡 We’re guilty of encrypting questionable messages, but hey—learning requires experimentation.
-
 🟢 Cryptography wins because now we know how to properly secure messages with encryption and authenticity.
 
-**Lesson learned:** Never trust plaintext. Always assume someone is lurking, trying to spill your tea. Encrypt-then-sign for double protection. And always verify before you decrypt—because a fake message is worse than no message at all.
+🟢 Were we being sneaky? Maybe.
 
-So next time you hit send, just remember—your message should be locked, signed, and sealed before it flies. After all, the best way to keep a secret... is to never let it slip in the first place.
+🟢 Was it shady? Not at all.
 
-> TL;DR: ✅ Encryption ✅ Signing ✅ Verification \
-> No tea spilled. Secrets stayed secret. CIA goals achieved.
+🟢 Was it secure? Absolutely.
+
+In a world where spoilers spread faster than pings in Discord, sending a proposal in plaintext is basically broadcasting your alliance to the whole class. We chose a smarter way: Encrypt. Sign. Verify. Repeat.
+
+And if that makes us cryptographically courteous collaborators instead of digital drama stirrers?
+ Then we’ll wear that title with pride. 🤝🔐
+
+Lesson learned: Never trust plaintext. Always assume someone is lurking, trying to spill your tea. Encrypt-then-sign for double protection. And always verify before you decrypt—because a fake message is worse than no message at all.
+
+So next time you hit send, just remember—your message should be locked, signed, and sealed before it flies. After all, the best way to keep a secret... is to never let it slip in the first place. ☕🔐
+
+TL;DR: 
+
+✅ Proposed collab.
+
+✅  Secrets stayed secret.
+
+✅ No tea spilled.
+
+✅ CIA goals achieved.
+
+
+So AWTA for trying to join forces in a secure way? Maybe a little—but only in the best way possible.
