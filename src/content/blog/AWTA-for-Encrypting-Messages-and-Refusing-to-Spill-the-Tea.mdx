@@ -170,12 +170,9 @@ Here’s how we do it:
 
 1. We use the recipient's public key to encrypt the message.
 2. We apply RSA-OAEP padding to the message before encrypting, which ensures the message stays secure even if someone tries to mess with it.
-
-* The padding ensures that even if two identical messages are encrypted with the same public key, their ciphertexts will be different. This guards against potential attackers trying to analyze patterns in encrypted messages.
-
-1. Finally, we encode the encrypted message using Base64, making it easy to send over text-based protocols (like email, or as part of a JSON payload) while ensuring it’s still binary-safe.
-
-* Once we encrypt the message, it’s binary data. Base64 converts it into ASCII text, which makes it easy to transmit and store, but still keeps the content secure—since only the receiver’s private key can decrypt it.
+   1. The padding ensures that even if two identical messages are encrypted with the same public key, their ciphertexts will be different. This guards against potential attackers trying to analyze patterns in encrypted messages.
+3. Finally, we encode the encrypted message using Base64, making it easy to send over text-based protocols (like email, or as part of a JSON payload) while ensuring it’s still binary-safe.
+   1. Once we encrypt the message, it’s binary data. Base64 converts it into ASCII text, which makes it easy to transmit and store, but still keeps the content secure—since only the receiver’s private key can decrypt it.
 
 ```python
 def encrypt_message(message, public_key):
@@ -284,14 +281,14 @@ return plaintext.decode()
 
 Only the intended recipient with the private key can decrypt it—read it. Confidentiality unlocked.
 
-## 8 Full Secure Messaging Workflow
+## 8. Full Secure Messaging Workflow
 
 1. Sender:
 2. Receiver:
 
 No signature? No decrypt. No authenticity? No trust.
 
-## 9 The Grand Reveal
+## 9. The Grand Reveal
 
 When the other group receives the message, they verify the signature. Once confirmed that there’s no tampering and it’s genuinely from us, they use their private key to decrypt the message.
 
@@ -351,7 +348,9 @@ We didn’t just lock the vault—we armored it with asymmetric encryption, cryp
 ## Final Verdict
 
 🔴 You’re asking for trouble if you DIY cryptography (seriously, leave it to the pros).
+
 🟡 We’re guilty of encrypting questionable messages, but hey—learning requires experimentation.
+
 🟢 Cryptography wins because now we know how to properly secure messages with encryption and authenticity.
 
 🟢 Were we being sneaky? Maybe.
@@ -363,7 +362,7 @@ We didn’t just lock the vault—we armored it with asymmetric encryption, cryp
 In a world where spoilers spread faster than pings in Discord, sending a proposal in plaintext is basically broadcasting your alliance to the whole class. We chose a smarter way: Encrypt. Sign. Verify. Repeat.
 
 And if that makes us cryptographically courteous collaborators instead of digital drama stirrers?
- Then we’ll wear that title with pride. 🤝🔐
+Then we’ll wear that title with pride. 🤝🔐
 
 Lesson learned: Never trust plaintext. Always assume someone is lurking, trying to spill your tea. Encrypt-then-sign for double protection. And always verify before you decrypt—because a fake message is worse than no message at all.
 
