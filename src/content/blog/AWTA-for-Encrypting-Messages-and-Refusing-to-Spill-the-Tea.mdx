@@ -20,7 +20,7 @@ The semester's getting chaotic. The deadlines are closing in. Midterms are loomi
 
 But here's the dilemma—this kind of proposal? It has to be lowkey. You know how group chats are. One “👀” emoji and suddenly the whole class knows.
 
-So instead of sliding into DMs or passing notes like it’s high school, we go full-on cyber-spy mode. 
+So instead of sliding into DMs or passing notes like it’s high school, we go full-on cyber-spy mode.
 We encrypt the message. We sign it. We don’t just ask for a collab—we cloak it in cryptographic security.
 
 Because in this digital drama, trust is earned through:
@@ -28,9 +28,6 @@ Because in this digital drama, trust is earned through:
 * Confidentiality: The message stays private (RSA-OAEP encryption).
 * Integrity: No one can tamper with it undetected (digital signature).
 * Authenticity: The recipient knows it’s from you (signing key).
-
-
-
 
 ## 1. The Plan: Encrypt. Sign. Send.
 
@@ -65,9 +62,6 @@ import base64
 import os
 ```
 
-
-
-
 🔐 rsa – For generating key pairs and performing asymmetric encryption/decryption.
 
 📦 padding – To securely wrap messages using schemes like OAEP and PSS.
@@ -81,9 +75,6 @@ import os
 🗂️ os – For general file operations and generating randomness when needed.
 
 Together, these libraries form the toolkit that makes our encrypted collab proposal possible—safe, secure, and no sketchy hacks involved.
-
-
-
 
 ## 3. Key Generation: Encryption and Signing
 
@@ -154,13 +145,7 @@ return serialization.load_pem_public_key(key_data)
 
 ```
 
-
-
-
 All keys are securely generated and saved to .pem files. Future runs can load them back to avoid regenerating every time. Four keys, two pairs, one mission: keep our message locked down and our identity crystal clear.
-
-
-
 
 ## 4. Encrypting the Message (RSA\_OAEP)
 
@@ -170,9 +155,9 @@ Here’s how we do it:
 
 1. We use the recipient's public key to encrypt the message.
 2. We apply RSA-OAEP padding to the message before encrypting, which ensures the message stays secure even if someone tries to mess with it.
-   1. The padding ensures that even if two identical messages are encrypted with the same public key, their ciphertexts will be different. This guards against potential attackers trying to analyze patterns in encrypted messages.
+   * The padding ensures that even if two identical messages are encrypted with the same public key, their ciphertexts will be different. This guards against potential attackers trying to analyze patterns in encrypted messages.
 3. Finally, we encode the encrypted message using Base64, making it easy to send over text-based protocols (like email, or as part of a JSON payload) while ensuring it’s still binary-safe.
-   1. Once we encrypt the message, it’s binary data. Base64 converts it into ASCII text, which makes it easy to transmit and store, but still keeps the content secure—since only the receiver’s private key can decrypt it.
+   * Once we encrypt the message, it’s binary data. Base64 converts it into ASCII text, which makes it easy to transmit and store, but still keeps the content secure—since only the receiver’s private key can decrypt it.
 
 ```python
 def encrypt_message(message, public_key):
@@ -189,9 +174,6 @@ return base64.b64encode(ciphertext)
 
 
 ```
-
-
-
 
 ## 5. Signing the Encrypted Message (RSA-PSS)
 
@@ -217,9 +199,6 @@ return base64.b64encode(signature)
 
 
 ```
-
-
-
 
 ## 6. Verifying the Signature Before Decrypting
 
@@ -252,9 +231,6 @@ return False
 
 ```
 
-
-
-
 ## 7. Decrypting the Message (Only If Verified)
 
 Once the signature has been verified, we proceed to decrypt the message using the private decryption key. This ensures that the original message is securely retrieved and can only be read by the recipient who holds the corresponding private key.
@@ -276,15 +252,17 @@ return plaintext.decode()
 
 ```
 
-
-
-
 Only the intended recipient with the private key can decrypt it—read it. Confidentiality unlocked.
 
 ## 8. Full Secure Messaging Workflow
 
 1. Sender:
+   * Encrypts the message using the recipient's public key.
+   * Signs the encrypted message using their private signing key.
+   * Sends both the ciphertext and the signature.
 2. Receiver:
+   * Verifies the signature using the sender's public signing key.
+   * If valid, decrypts the ciphertext using their private key.
 
 No signature? No decrypt. No authenticity? No trust.
 
@@ -320,9 +298,6 @@ Decrypted Message: Can we collaborate for a machine problem ?
 
 These sample inputs and outputs were captured in the program when run via Google Colab and saved to a log file called sample\_inputs.txt. This log file includes the original message, its encrypted ciphertext, the corresponding signature, and the decrypted message. The sample inputs and outputs were crucial for demonstrating the encryption, signature verification, and decryption process in action. This log file demonstrates the full process from encryption and signing to decryption and verification, ensuring that all the necessary components of the system work seamlessly.
 
-
-
-
 ## Why This Approach?
 
 This Encrypt-Then-Sign method is superior because:
@@ -331,9 +306,6 @@ This Encrypt-Then-Sign method is superior because:
 * Confidentiality: Encrypting the message ensures that only the recipient can read it.
 * Verification before Decrypting: We only decrypt if the signature is valid, preventing tampered or fake messages from being read.
 
-
-
-
 ## So, AWTA for Keeping our Collab Plans Top Secret?
 
 Maybe we are—but in the best possible way. If encrypting our deal, sealing them with digital signatures, and refusing to let anyone spill them makes us the antagonists… then so be it. Because in a world where messages leak faster than hot gossip, proposing an alliance through a secure channel isn’t shady. It’s strategic.
@@ -341,9 +313,6 @@ Maybe we are—but in the best possible way. If encrypting our deal, sealing the
 We didn’t just suggest a collab—we sent a signed and sealed declaration of teamwork potential.
 
 We didn’t just lock the vault—we armored it with asymmetric encryption, cryptographic signatures, and full CIA (the cybersecurity kind, not the other one).
-
-
-
 
 ## Final Verdict
 
@@ -368,15 +337,15 @@ Lesson learned: Never trust plaintext. Always assume someone is lurking, trying 
 
 So next time you hit send, just remember—your message should be locked, signed, and sealed before it flies. After all, the best way to keep a secret... is to never let it slip in the first place. ☕🔐
 
-TL;DR: 
+> TL;DR: 
 
-✅ Proposed collab.
+> ✅ Proposed collab.
 
-✅  Secrets stayed secret.
+> ✅  Secrets stayed secret.
 
-✅ No tea spilled.
+> ✅ No tea spilled.
 
-✅ CIA goals achieved.
-
+> ✅ CIA goals achieved.\
+>
 
 So AWTA for trying to join forces in a secure way? Maybe a little—but only in the best way possible.
