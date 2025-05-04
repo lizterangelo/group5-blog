@@ -11,8 +11,8 @@ interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
 	site: 'https://the5quills.vercel.app/', // Write here your website url
-	author: 'angela abrau', // Site author
-	title: 'angela abrau', // Site title.
+	author: 'Group 5', // Site author
+	title: 'The 5quills', // Site title.
 	description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.', // Description to display in the meta tags
 	lang: 'en-GB',
 	ogLocale: 'en_GB',		
