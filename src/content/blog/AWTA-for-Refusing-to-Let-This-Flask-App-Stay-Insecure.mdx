@@ -1,0 +1,449 @@
+---
+heroImage: >-
+  https://res.cloudinary.com/dphoq3loc/image/upload/v1746852020/mp3_cover_image_d7eza7.png
+category: For Sir Eli
+description: >-
+  Machine Problem 3: Security Flaws found in the Web Application (SQL
+  injections, CSRF, and XSS)
+pubDate: 2025-05-08T16:00:00.000Z
+tags:
+  - CSRF
+  - XSS
+  - SQL Injections
+title: AWTA for Refusing to Let This Flask App Stay Insecure?
+---
+
+We (security-focused dev, 21M\&F) were handed a barebones Flask app with a login system, post submission, and SQLite DB. The client said, “Fix only the SQL Injection, CSRF, and XSS.” Cool. So we booted it up, poked around, and quickly realized this app was a cybercrime waiting to happen.
+
+To put it bluntly, this app was trusting every input, accepting any request, and writing SL like it was still 1999.
+
+* SQL built with string concatenation
+* SQl queries stitched together like Frankenstein's monster
+* No CSRF validation
+* CSRF protection? More like "Please Hijack Me" signage
+* Stored XSS vectors left unescaped
+* XSS vectors waving | safe flags like they owned the place
+
+So, like:
+
+Client's orders: "Fix SQLi, CSRF, and XSS."
+
+Our reaction: "Oh, you mean rewrite this entire security model?"
+
+## 0. The Plan – Here’s What We’re  Gonna Do
+
+We broke down the app’s core routes and classified the risks. My audit covered:
+
+| Route   | Threat Surface  | Potential Flaws                        |
+| ------- | --------------- | -------------------------------------- |
+| /login  | SQLi, CSRF      | Unsafe SQL, missing token verification |
+| /home   | SQLi            | Unsafe SQL pulling user posts          |
+| /posts  | SQLi, CSRF, XSS | SQL injection on insertion, XSS risk   |
+| /logout | SQLi            | Unsafe SQL on session deletion         |
+
+Remediation Objectives:
+
+1. Parameterize all SQL queries to prevent SQLi.
+2. Implement CSRF protection using tokens.
+3. Sanitize and auto-escape all user inputs to block XSS.
+
+Finding these was equal parts horrifying and darkly funny – like, who in their right mind ships code like this? The moment we saw all this, we knew we had to hit the code with the sledgehammer of reason (a.k.a. fix it with extreme prejudice).
+
+
+So, sleeves rolled up, we got to work patching these holes. We tried to keep it as straightforward as possible, but also very firm about not cutting corners. Here’s what we did for each issue:
+
+## 1. SQL Injection - From String Concatenation to Cyber Sanity aka Safety 
+
+The original code was building SQL queries via string concatenation. The original crime scene looked something like:
+
+```python
+cur.execute("SELECT username FROM users INNER JOIN sessions ON " + 
+            "users.id = sessions.user WHERE sessions.token = '" +
+            request.cookies.get("session_token") + "'")
+```
+
+Audible gasps because DROP TABLE users;-- could have nuked the database, but, oh well. Basically, the query was directly embedding the username and password from the form. 😬 If you can spot the problem, 🎉congrats – you’re more security-conscious than whoever wrote this. This approach meant an attacker could input something like username: ' OR 1=1-- and boom, they'd bypass login or worse. It’s the classic SQL injection vulnerability. The database would happily execute whatever nasty SQL an attacker smuggled in. (We half-expected to find an XKCD "Little Bobby Tables" reference in the code because it was that bad.) To fix this, we implemented parameterized queries everywhere. Instead of building SQL strings manually, we use placeholders (?) and let the database library handle inserting values safely. For example, the login query became:
+
+```python
+cur.execute("SELECT username FROM users "
+            "INNER JOIN sessions ON users.id = sessions.user "
+            "WHERE sessions.token = ?", (session_token,))
+```
+
+Now, no matter what crazy input comes through username or password, it’s treated as data, not executable SQL. We, basically, put the database on a strict diet – no more feeding it raw user input sushi. This change was applied to all database operations: selecting users, inserting session tokens, posts... everything. If you see cur.execute(... ? ...) in our code now, that’s the sledgehammer at work. 🔨💥 No more SQL injection party tricks. 
+
+This fix was applied across:
+
+Login verification - Credential Check (POST)
+
+Before:
+
+```python
+res = cur.execute("SELECT id from users WHERE username = '"
+                  + request.form["username"]
+                  + "' AND password = '"
+                  + request.form["password"] + "'")
+```
+
+After:
+
+```python
+username = request.form["username"]
+password = request.form["password"]
+res = cur.execute("SELECT id FROM users WHERE username = ? AND password = ?",
+                  (username, password))
+```
+
+Login verification - Insert Session Token
+
+Before:
+
+```python
+cur.execute("INSERT INTO sessions (user, token) VALUES ("
+            + str(user[0]) + ", '" + token + "');")
+```
+
+After:
+
+```python
+cur.execute("INSERT INTO sessions (user, token) VALUES (?, ?)",
+            (user[0], token))
+```
+
+Home - Session Token Check
+
+Before:
+
+```python
+res = cur.execute("SELECT users.id, username FROM users INNER JOIN sessions ON "
+                  + "users.id = sessions.user WHERE sessions.token = '"
+                  + request.cookies.get("session_token") + "';")
+```
+
+After:
+
+```python
+session_token = request.cookies.get("session_token")
+res = cur.execute("SELECT users.id, username FROM users "
+                  "INNER JOIN sessions ON users.id = sessions.user "
+                  "WHERE sessions.token = ?", (session_token,))
+```
+
+Home - Fetch User's Post
+
+Before:
+
+```python
+res = cur.execute("SELECT message FROM posts WHERE user = " + str(user[0]) + ";")
+```
+
+After:
+
+```python
+res = cur.execute("SELECT message FROM posts WHERE user = ?", (user[0],))
+```
+
+Posts - Session Token Check
+
+Before:
+
+```python
+res = cur.execute("SELECT users.id, username FROM users INNER JOIN sessions ON "
+                  + "users.id = sessions.user WHERE sessions.token = '"
+                  + request.cookies.get("session_token") + "';")
+```
+
+After:
+
+```python
+session_token = request.cookies.get("session_token")
+res = cur.execute("SELECT users.id, username FROM users "
+                  "INNER JOIN sessions ON users.id = sessions.user "
+                  "WHERE sessions.token = ?", (session_token,))
+```
+
+Posts - Insert Post
+
+Before:
+
+```python
+cur.execute("INSERT INTO posts (message, user) VALUES ('"
+            + request.form["message"] + "', " + str(user[0]) + ");")
+```
+
+After:
+
+```python
+message = request.form["message"]
+cur.execute("INSERT INTO posts (message, user) VALUES (?, ?)",
+            (message, user[0]))
+```
+
+Logging out - Session Token Check
+
+Before:
+
+```python
+res = cur.execute("SELECT users.id, username FROM users INNER JOIN sessions ON "
+                  + "users.id = sessions.user WHERE sessions.token = '"
+                  + request.cookies.get("session_token") + "'")
+```
+
+After:
+
+```python
+session_token = request.cookies.get("session_token")
+res = cur.execute("SELECT users.id, username FROM users "
+                  "INNER JOIN sessions ON users.id = sessions.user "
+                  "WHERE sessions.token = ?", (session_token,))
+```
+
+Logging Out - Delete Session
+
+Before:
+
+```python
+cur.execute("DELETE FROM sessions WHERE user = " + str(user[0]) + ";")
+```
+
+After:
+
+```python
+cur.execute("DELETE FROM sessions WHERE user = ?", (user[0],))
+```
+
+We applied this to every. single. query. from Login, sessions, posts—no exceptions. Silent sighs of relief because database admins can now sleep soundly at night, and we already put the universal defense against injection, so no more SQL-as-a-string-art thing. 
+
+## 2. CSRF – From "Trust All Requests" to "Verify or D!e" aka Validation
+
+Next up: CSRF protection. The app had none. Zip. Nada. An attacker could literally make a malicious page that auto-submits a form to our site (using a user’s session), and our app would blindly accept it. Not on our watch!
+
+To prove how bad the CSRF flaw was, we created a little "red team" demo file: csrf\_attack.html. (We were trained to think like a hacker—keeping our friends close and enemies closer.) This file is a malicious HTML page that silently auto-submits a login form to our app the moment it’s loaded:
+
+```python
+cur.execute("DELETE FROM sessions WHERE user = ?", (user[0],))
+```
+
+This file is not part of the app, but rather a simulated attack page meant to demonstrate just how easy it is to abuse the lack of CSRF protection. When run in a browser, it immediately submits a login request using a victim's session (if they're logged in), and the original app would process it without a second thought. Loud puffs on allowing an attacker to be logged in without consent, instead of the innocent user. Yikes.  No double take, no additional checks, no anything—just trust. 
+
+
+Think of it as a proof-of-concept. It showed everyone on the team (even the skeptical ones) exactly why CSRF protection is non-negotiable. Without any defense, our app had no way of distinguishing between a legitimate form and an evil twin with bad intentions.
+
+So, we implemented a standard CSRF token system. In Flask, this meant a few things:
+
+* Secret Key & Token Generation: We generate a random token when a user session starts and store it server-side.
+* Embedding Token in Forms: Every form in the HTML now includes this token as a hidden input.
+* Validation on Submit: The server checks that the token from the form matches the one in the user’s session. If not, we reject the request as forgery.
+
+In code, it looks like this. We added a before\_request function to create a unique token for each session.
+
+#### Before:
+
+```python
+# No CSRF token generation
+```
+
+#### After:
+
+```python
+app = Flask(__name__)
+app.secret_key = os.urandom(16)
+con = sqlite3.connect("app.db", check_same_thread=False)
+
+@app.before_request
+def set_csrf_token():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_hex(16)
+```
+
+
+The above ensures every user session gets a unique token. Then, for any POST route that processes a form, we check the token:
+
+```python
+if request.form.get("csrf_token") != session.get("csrf_token"):  
+    return "Forbidden Access", 403 
+```
+
+If the token doesn’t match, we basically respond with a big “NOPE, 403 Forbidden.” This is like asking for a secret handshake on every form submission – if you don’t know the handshake, you ain’t getting in. On the front-end side, we added a hidden input field in the forms to include the token. For example, in our HTML template for posting messages:
+
+Before:
+
+```python
+<form method="post" action="/posts">
+  <input type="text" name="message">
+  <input type="submit" value="Post!">
+</form>
+```
+
+After:
+
+```python
+<form method="post" action="/posts">
+      <input type="text" name="message">
+      <input type="submit" value="Post!">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+</form>
+```
+
+This way, whenever a user submits the form, our app can verify that the request originated from our form, not some random evil script on another site. It’s basically adding a tamper-evident seal to our form submissions. Simple, effective, and long overdue for this app. We updated the login and post forms to include the CSRF token.
+
+
+Logging In
+
+Before:
+
+```python
+<form method="post" action="/login">
+  <input name="username" type="text" />
+  <input name="password" type="password" />
+  <input type="submit" value="Login" />
+</form>
+```
+
+After:
+
+```python
+<form method="post" action="/login">
+  <input name="username" type="text" />
+  <input name="password" type="password" />
+  <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+  <input type="submit" value="Login" />
+</form>
+```
+
+CSRF Token Validation in Backend -  @app.route("/login",methods=\["POST"])
+
+Before:
+
+```python
+# No CSRF validation
+```
+
+After:
+
+```python
+if request.form.get("csrf_token") != session.get("csrf_token"):
+    return "Forbidden Access", 403
+```
+
+@app.route("/posts", methods=\["POST"])
+
+Before:
+
+```python
+# No CSRF validation
+```
+
+After:
+
+```python
+if request.form.get("csrf_token") != session.get("csrf_token"):
+    return "403 Forbidden Access", 403
+```
+
+It's like secret handshakes exchanged, so when the “user,” aka now attacker, who had no token or wrong token, will only be redirected to 403 Forbidden Access. Embedding it into every form will allow double verification on 2 tokens now, the session and csrf. Sarcastic laughs at the attacker because they are asked twice if they are really an attacker.
+
+## 3: XSS – When Messages Talk Back aka Real Message
+
+Finally, the XSS issue. This one made me facepalm and sigh (again). The original dev was outputting user-generated content (posts/messages) and explicitly telling the template engine not to escape HTML. They had something like in home.html, user messages were rendered like this:
+
+```python
+<li>{{ post[0] | safe }}</li>
+```
+
+Yes, that | safe was basically them saying "Hey, Jinja2, trust me, this content is fine. Don't escape it." 🤦‍♂️😮‍💨 It’s like willingly taking the muzzle off a rabid dog. If a user had included any \<script> or malicious HTML in their post, the browser would just execute it. Stored XSS galore.
+
+```python
+<script>alert('hacked')</script>
+```
+
+The fix was straightforward: remove the freaking | safe. By default, Jinja2 will escape HTML in variables, which is what we want for user input. I changed the template to:
+
+```python
+<li>{{ post[0] }}</li>
+```
+
+Now, if someone tries to post \<img src=x onerror=alert('XSS')> or any script, it will just show up as text on the page, not execute. We basically told the app, "No, you may not blindly trust content from users." It's the web-app equivalent of "don't take candy from strangers." 🍭🚫
+
+This change required a tiny tweak but has a huge impact. We can still allow basic text and stuff, but anything that looks like HTML will be harmlessly displayed instead of acted upon. Bye-bye XSS.
+
+## 4. The Urgent Fixes Sprint Retrospective: AWTA for Locking It Down?
+
+To sum up, these were the exact changes we made to the codebase to secure it:
+
+* All SQL queries were converted to use parameterized queries (? placeholders) instead of string concatenation. This closed the SQL injection holes in login, post submission, session handling, etc.
+* CSRF protection was added: a secret key for sessions, generation of a CSRF token on session start, inclusion of that token in every form, and verification of the token on each POST request. If the token check fails, the request is rejected.
+* XSS fix: Removed the | safe filter when rendering user content, so that any HTML tags in user input are escaped (displayed as plain text) rather than executed.
+
+Each of these changes was pretty textbook, honestly. Nothing fancy – just applying well-known best practices. The code works the same from a user’s perspective, but under the hood, it’s no longer an explosive keg waiting to blow. 
+
+After all these fixes, we felt way more confident in the app. At the end of the day, we basically put our foot down and said we wouldn’t let this app go live (or pass the final submission) without these fixes. It might have ruffled some feathers and delayed us a bit, but we have a much safer app to show for it.
+
+So, AWTA for refusing to let this insecure Flask app go live until we patched all these security holes?
+
+No. We're the firefighters in a room filled with gasoline and lit matches. Our job was to take a casually insecure app and make it production-safe — or at least assignment-grade safe.
+
+We:
+
+* Neutralized injection attacks
+* Blocked silent form hijacks
+* Prevented malicious scripts from running
+
+
+
+
+🔴 Original App Version:
+
+SQLi: Wide open.
+
+CSRF: "Why validate friends?"
+
+XSS: |safe as a death wish.
+
+
+
+
+🟢 Our New Deployed Version:
+
+SQLi: Parameterized to oblivion.
+
+CSRF: Token-locked fortress.
+
+XSS: Escaped like Houdini in a straitjacket.
+
+
+
+
+Final Verdict:
+
+🟢Antagonist level? Zero.
+
+🟢Guardians of Good Code level? One hundred.
+
+🟢Chaos caused? Only to attackers.
+
+🟢Users? Secured.
+
+
+
+
+Lessons learned:
+
+Never trust inputs. Ever.
+
+Tokens > Trust.
+
+|safe is never safe.
+
+> TL;DR:
+> ✅ SQLi? Patched.
+> ✅ CSRF? Buried.
+> ✅ XSS? Neutered.
+> ✅ Reputation as security hardliners? Established.
+
+"You either die a vulnerable app or live long enough to see yourself become the security patch." Well, we chose the latter. 🔒💥
+
+
+Code Repo: [https://drive.google.com/drive/folders/1VU23WKTEgjqXHlTNSN0VCMjg0rWIwBbs?usp=sharing](https://drive.google.com/drive/folders/1VU23WKTEgjqXHlTNSN0VCMjg0rWIwBbs?usp=sharing) 
+Live Demo: Now with 100% fewer exploits.
+
