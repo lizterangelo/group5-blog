@@ -1,0 +1,138 @@
+---
+heroImage: >-
+  https://res.cloudinary.com/dphoq3loc/image/upload/v1748095721/writeup1_xq3c9f.jpg
+category: For Sir Eli
+description: An Article on Tor project
+pubDate: 2025-05-23T16:00:00.000Z
+tags:
+  - writeup 1
+  - tor
+title: Are We The Antagonists?
+---
+
+I remember the first time I used Tor—not as a rebel or a criminal—but simply to read. In a country where certain articles were blocked, where truth was a threat, and where fear lurked behind every search, that first encrypted click wasn’t an act of defiance. It was an act of preservation.
+
+Global internet freedom has been in a sustained decline for the 14th consecutive year, a trend that continued through the June 2023 to May 2024 reporting period (Funk, Vesteinsson, & Baker, 2024). During this time, conditions for human rights online deteriorated in 27 of the 72 countries assessed, impacting 87 percent of the world's internet users. In at least 56 of these 72 countries, internet users faced arrest for their political, social, or religious expression. Furthermore, individuals were physically attacked or even killed in retaliation for their online activities in a record high of at least 43 countries.
+
+Tor often stands trial in public opinion: painted as a shadowy conduit for crime. But ask anyone who’s ever needed to stay anonymous to stay alive, and you’ll hear a different story. What if, in trying to destroy the shadows, we’ve become the thing people need shadows to hide from? What if it’s not Tor that’s the antagonist—but us?
+
+# What Tor Technically Does—and Why It’s Revolutionary
+
+Tor routes internet traffic through three randomly selected relays—each knowing only its immediate predecessor and successor—ensuring that no single node knows both sender and receiver. This is not just a privacy feature—it’s a security architecture built on solid cryptographic foundations:
+
+* Asymmetric encryption ensures only the final node can decrypt the payload.
+* Forward secrecy ensures even if one key is compromised, past sessions remain secure.
+* Onion routing means each layer is peeled at a different node, preventing linkability.
+
+These aren’t hacks. These are advanced implementations of concepts taught in every credible computer security curriculum.
+
+Now compare this to HTTP—where data is sent in plain text. Or DNS—where a query reveals exactly what you’re looking for unless it's DNSSEC-signed, a standard with only about 1% global actual use (SIDN, 2025). Or even TLS, which protects data in transit but does not anonymize who’s speaking, a limitation exploited by over 90% of phishing sites now using HTTPS to deceive users (Howe, 2025).
+
+Tor doesn’t just protect what you say. It protects that you’re saying it at all.
+
+# Tor’s Users Aren’t Who You Think
+
+Let’s put faces to the network. Tor protects:
+
+* A journalist in Turkey reporting on government surveillance.
+* An LGBTQ+ student in Saudi Arabia seeking a support group.
+* A political dissident in Belarus emailing encrypted documents.
+* A survivor of domestic violence hiding their IP address from an abusive ex.
+
+These are not outliers. They're the logical consequence of global digital inequality. Where state surveillance, unsecured web protocols, and data commodification converge, Tor becomes essential.
+
+Let’s put faces to the numbers, too. Tor boasts approximately eight million daily users globally (Soi, Regano, Maiorca, & Giacinto, 2024). The United States alone accounts for 29.12% of these users, with Germany (9.75%) and India (3.01%) also showing significant user bases (The Tor Project, n.d.).
+
+From our own lecture in Cybersecurity, it’s clear how fragile digital security really is:
+
+* Session hijacking happens via CSRF and XSS.
+* TCP RST injection can censor conversations.
+* BGP hijacks reroute global traffic and break routing trust.
+
+Tor mitigates all of these. It decentralizes trust. It assumes the network is hostile and designs around that assumption.
+
+And despite popular belief, most Tor users aren’t criminals. Academic studies reveal that only a small fraction of users globally—approximately 6.7% on an average day—likely use Tor for malicious purposes by connecting to Onion/Hidden Services disproportionately associated with illicit activities (Lucero et al., 2009). This means that the overwhelming majority—upwards of 93% of Tor users globally—access websites on the clear web for legitimate purposes. 
+
+Interestingly, the context of use matters. 'Free' countries actually exhibit a slightly higher proportion of such illicit use (approximately 7.8%) compared to 'not free' regimes (approximately 4.8%)(Lucero et al., 2009). This suggests that in environments where anonymity is a matter of survival—where individuals face severe repercussions for online expression, as seen in the 56 countries where internet users were arrested for speech (Funk, Vesteinsson, & Baker, 2024)—Tor is predominantly used for fundamental rights-based purposes.
+
+# Why the Argument to Ban Tor Falls Apart
+
+Many want Tor banned because criminals use it. But this logic breaks under scrutiny.
+
+If Tor should be banned for enabling crime, then so should:
+
+* DNS, for being spoofable
+* Wi-Fi, for being interceptable
+* HTTPS, for enabling phishing under encryption
+
+The truth is, all protocols can be exploited. What makes Tor unique is that it’s built to protect the user first.
+
+The real reason people want to ban Tor? It disrupts surveillance. It renders invisible what companies and governments want to monitor. It gives individuals asymmetric power—to be untraceable in a world designed to trace.
+
+# We Built the Need for Tor
+
+Tor didn’t invent anonymity—it inherited the burden of a system built without it.
+
+The modern internet, despite its incredible reach, was not designed with security or privacy in mind. From its earliest protocols to the apps we use today, each layer has been vulnerable by default, leaving users exposed unless they take extra steps. Tor isn’t the problem—it’s the patch. Let’s unpack why.
+
+## DNS Was Never Secure
+
+Traditional DNS lacks both integrity and authentication. A 2021 IDC survey found that 87% of over 1,100 organizations across North America, Europe, and Asia Pacific had encountered DNS attacks (Heimdal Security, 2025). The threat continues to escalate, with DNS amplification attacks showing a 117% year-over-year increase in Q4 2023, and 38% of DNS attacks in 2023 involving malware distribution. Despite DNSSEC being designed to add integrity, its actual global use was estimated at only about 1% in 2023, and for the largest top-level domain,.com, only about 5% of domain names were signed as of 2024 (SIDN, 2025).
+
+DNS (Domain Name System) translates human-readable domains into IP addresses. But traditional DNS lacks both integrity (you can’t verify responses) and authentication (you don’t know who sent them). Anyone on the path—like an ISP or a rogue network node—can eavesdrop on, spoof, or poison DNS responses.
+
+* DNSSEC was introduced to fix this by digitally signing responses, but:
+  * It’s complex and inconsistently adopted.
+  * Most users and sites still rely on unsigned, plaintext DNS.
+
+Tor bypasses this issue by embedding name resolution within its own encrypted routing protocol, shielding both the query and its response from prying eyes.
+
+## TCP Was Never Private
+
+The Transmission Control Protocol (TCP) ensures reliable delivery of data—but not confidentiality. Without encryption, anyone monitoring your connection (like in a café, or via your ISP, or a hostile government) can see everything you do.
+
+* That’s why TLS (used in HTTPS) had to be bolted on later to encrypt traffic.
+* Even so, TLS only protects content, not who you're talking to, how often, or when.
+
+While TLS (used in HTTPS) encrypts data in transit, it only protects content, not who you're talking to, how often, or when. This limitation is exploited by malicious actors, with over 90% of phishing sites now employing HTTPS, leveraging the 'secure' padlock icon to deceive users (Howe, 2025). That’s why it’s more than just “private browsing”—it’s network-level privacy.
+
+## Browsers Run Untrusted Code by Default
+
+Every day, your browser downloads and executes JavaScript from multiple domains. This opens the door to vulnerabilities, with a staggering 22,254 Common Vulnerabilities and Exposures (CVEs) reported by mid-2024, reflecting a 56% increase from 2022 and a 30% jump from 2023 (Chinnasamy, 2024). Vulnerability-based attacks surged by 124% in Q3 2024 compared to the same period in 2023. XSS attacks, specifically, were found to affect 41% of clients and accounted for 2,256 critical vulnerabilities in a 2023-2024 analysis (Black Duck Software, Inc., 2024). Content Security Policies (CSPs) were introduced to mitigate these risks, yet only 2% of sites have implemented a 'perfect' CSP, with most implementations missing key data or involving unsafe configurations (Pacheco, 2020).
+
+* Content Security Policies (CSPs) were introduced to restrict JS behavior, but:
+  * They’re difficult to configure correctly. 
+  * Most sites don’t use them rigorously.
+
+Tor Browser defends against this by:
+
+* Disabling JS by default or heavily sandboxing it. 
+* Blocking trackers and third-party content. 
+* Preventing fingerprinting with uniform browser profiles.
+
+Tor doesn’t just patch browser vulnerabilities—it compensates for how permissive and unsafe web design has become.
+
+# Tor Is the Fire Escape
+
+To say Tor is dangerous because it can be misused is like saying fire escapes cause arson. It wasn’t Tor that created the need to hide. It was the internet’s architecture—built for openness, not protection—that did. And until we rebuild from the ground up with privacy as a default, Tor isn’t just justified.
+
+It’s necessary.
+
+# Final Verdict: Not a Monster, But a Mirror
+
+Tor is not the antagonist. It is a mirror. It reflects what happens when surveillance, censorship, and insecurity become so widespread that people are forced to hide just to breathe online.
+
+The continuous decline in global internet freedom—now spanning 14 consecutive years—has led to severe consequences: in at least 56 countries, internet users faced arrest for nonviolent expression, and people were physically attacked or killed in retaliation for online activities in a record high of at least 43 countries (Funk, Vesteinsson, & Baker, 2024). This pervasive threat results in a “chilling effect” on free speech; for instance, over half of Swiss internet users (59%) reported that potential surveillance discouraged them from researching sensitive political content, and 56% refrained from expressing opinions online (Latzer, 2019). An October 2013 survey of U.S. PEN members, predominantly writers, indicated that one in six were self-censoring due to concerns over NSA surveillance (PEN America, n.d.).
+
+If your system forces good people to become invisible just to survive, maybe the system—not the people—is broken.
+
+Beyond the human cost, the systemic consequences are staggering. The global cost of cybercrime is projected to rise dramatically—from $9.22 trillion in 2024 to $13.82 trillion by 2028 (Kunnackal Santhosh & Ahmed, 2025). The average cost of a data breach globally reached an all-time high of $4.88 million in 2024, a 10% increase from 2023. In the United States, this average cost is even higher, at $9.36 million (Taylor & Aronchik, 2025). Revelations about mass surveillance have also severely impacted business confidence, with early estimates suggesting the U.S. cloud computing industry could lose between $22 billion and $35 billion over three years if foreign customers deem the risks of storing data with U.S. companies too high (German, 2013).
+
+And if we blame the mirror for what it shows us, then we’re not just mistaken.
+
+We’re the antagonist.
+
+AWTA—Are We The Antagonists?
+The answer might not be comfortable.
+But maybe it’s the truth we need to hear.
+-----------------------------------------
